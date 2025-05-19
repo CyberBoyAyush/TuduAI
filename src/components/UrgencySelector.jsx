@@ -32,37 +32,50 @@ export default function UrgencySelector({ onChange, initialValue = 3 }) {
   }
   
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        {[1, 2, 3, 4, 5].map(value => (
-          <motion.button
-            key={value}
-            onClick={() => handleChange(value)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center font-medium ${
-              urgency === value
-                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300 ring-2 ring-primary-500'
-                : 'bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200'
-            }`}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+    <div className="space-y-6 py-4">
+      <div className="flex flex-col space-y-2">
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-700 dark:text-gray-300">Urgency:</div>
+          <div className="text-lg font-bold text-gray-700 dark:text-gray-300">{urgency}.0</div>
+        </div>
+        <div className="flex items-center">
+          <button 
+            onClick={() => urgency > 1 && handleChange(urgency - 1)}
+            className="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30"
+            disabled={urgency === 1}
           >
-            {value}
-          </motion.button>
-        ))}
+            &lt;
+          </button>
+          
+          <div className="flex-grow mx-2">
+            <div className="h-2 w-full bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full ${colors[urgency]}`}
+                initial={{ width: '60%' }}
+                animate={{ width: `${urgency * 20}%` }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => urgency < 5 && handleChange(urgency + 1)}
+            className="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-30"
+            disabled={urgency === 5}
+          >
+            &gt;
+          </button>
+        </div>
       </div>
       
-      <div className="h-2 w-full bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
-        <motion.div
-          className={`h-full ${colors[urgency]}`}
-          initial={{ width: '60%' }} // Default is 3 out of 5 (60%)
-          animate={{ width: `${urgency * 20}%` }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        />
-      </div>
-      
-      <div className="text-center text-sm font-medium text-primary-600 dark:text-primary-400">
-        {descriptions[urgency]}
-      </div>
+      <motion.button
+        onClick={() => onChange(urgency)}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-md text-center"
+      >
+        Set Urgency (⌘ + ↵)
+      </motion.button>
     </div>
   )
 }

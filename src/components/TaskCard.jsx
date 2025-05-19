@@ -104,7 +104,7 @@ export default function TaskCard({
                     autoFocus
                   />
                 ) : (
-                  <h3 className={`font-medium text-gray-800 dark:text-gray-200 ${
+                  <h3 className={`font-medium text-gray-800 dark:text-gray-100 ${
                     task.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''
                   }`}>
                     {task.title}

@@ -51,34 +51,17 @@ export default function Todo() {
   }
   
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="mb-8"
       >
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            Your Tasks
-          </h1>
-          
-          <motion.button
-            onClick={() => setIsAddingTask(!isAddingTask)}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-md shadow-sm"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span>New Task</span>
-          </motion.button>
-        </div>
-        
-        {/* Show/hide task input */}
-        <div className={`mt-4 ${isAddingTask ? 'block' : 'hidden'}`}>
+        {/* Show task input at the top, always visible like in the screenshot */}
+        <div className="mt-4">
           <TaskInput onAddTask={(taskData) => {
             handleAddTask(taskData)
-            setIsAddingTask(false)
           }} />
         </div>
       </motion.div>

@@ -93,15 +93,11 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
   }
   
   return (
-    <div className="p-4 space-y-4 bg-gray-50 dark:bg-neutral-900/50">
-      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Comments
-      </h4>
-      
+    <div className="p-4 space-y-4 bg-neutral-900/50">
       {/* Comments list */}
       <div className="space-y-3 max-h-60 overflow-y-auto">
         {comments.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+          <p className="text-sm text-gray-400 italic">
             No comments yet
           </p>
         ) : (
@@ -113,18 +109,18 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
               animate={{ opacity: 1, y: 0 }}
             >
               {/* User avatar */}
-              <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300 flex items-center justify-center font-medium text-sm shrink-0">
+              <div className="w-8 h-8 rounded-full bg-neutral-800 text-gray-300 flex items-center justify-center font-medium text-sm shrink-0">
                 {comment.user.charAt(0).toUpperCase()}
               </div>
               
               {/* Comment content */}
               <div className="flex-grow">
-                <div className="bg-white dark:bg-neutral-800 p-3 rounded-lg shadow-sm">
+                <div className="bg-neutral-800 p-3 rounded-lg">
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                    <span className="font-medium text-sm text-gray-200">
                       {comment.user}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-400">
                       {formatRelativeTime(comment.time)}
                     </span>
                   </div>
@@ -135,7 +131,7 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
                 {/* Delete action */}
                 <button
                   onClick={() => handleDeleteComment(comment.id)}
-                  className="mt-1 text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                  className="mt-1 text-xs text-gray-400 hover:text-red-400"
                 >
                   <TrashIcon className="w-3 h-3 inline mr-1" />
                   Delete
@@ -148,7 +144,7 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
       
       {/* Add comment form */}
       <form onSubmit={handleAddComment} className="mt-4 flex items-center space-x-2">
-        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300 flex items-center justify-center font-medium text-sm shrink-0">
+        <div className="w-8 h-8 rounded-full bg-neutral-800 text-gray-300 flex items-center justify-center font-medium text-sm shrink-0">
           {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
         </div>
         
@@ -157,12 +153,12 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Add a comment or use !help"
-          className="flex-grow p-2 rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100"
+          className="flex-grow p-2 rounded-md border border-neutral-600 bg-neutral-800 text-gray-100"
         />
         
         <motion.button
           type="submit"
-          className="p-2 bg-primary-500 text-white rounded-md"
+          className="p-2 bg-indigo-600 text-white rounded-md"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={!newComment.trim()}

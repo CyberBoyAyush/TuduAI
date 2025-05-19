@@ -75,7 +75,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b-2 border-red-500 dark:border-red-700 pb-2">
+        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
           <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
             Today & Overdue {groupedTasks.today.length > 0 && `(${groupedTasks.today.length})`}
           </h2>
@@ -115,7 +115,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b-2 border-yellow-500 dark:border-yellow-700 pb-2">
+        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
           <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
             Next 7 Days {groupedTasks.upcoming.length > 0 && `(${groupedTasks.upcoming.length})`}
           </h2>
@@ -155,7 +155,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b-2 border-green-500 dark:border-green-700 pb-2">
+        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
           <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
             Upcoming {groupedTasks.future.length > 0 && `(${groupedTasks.future.length})`}
           </h2>
