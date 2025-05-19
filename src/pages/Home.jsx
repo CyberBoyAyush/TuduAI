@@ -61,7 +61,7 @@ export default function Home() {
   }
   
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Hero section */}
       <motion.section 
         className="text-center py-16 md:py-24 relative"
@@ -70,16 +70,49 @@ export default function Home() {
         transition={{ duration: 0.8 }}
       >
         {/* Abstract background shape */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-3/4 h-3/4 bg-gradient-to-br from-primary-100 to-violet-100 dark:from-primary-900/20 dark:to-violet-900/10 rounded-full blur-3xl opacity-40 dark:opacity-30 -z-10"></div>
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-4/5 h-4/5 bg-gradient-to-br from-primary-100 to-violet-100 dark:from-primary-900/20 dark:to-violet-900/10 rounded-full blur-3xl opacity-40 dark:opacity-30 -z-10"></div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-5xl mx-auto"
         >
-          <SparklesIcon className="w-12 h-12 mx-auto text-primary-500 mb-6" />
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-            <span className="bg-gradient-to-r from-primary-500 to-violet-600 bg-clip-text text-transparent">
+          {/* Logo container with animation */}
+          <motion.div 
+            className="relative mb-8"
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              duration: 0.5,
+              ease: "easeOut"
+            }}
+          >
+            <div className="flex items-center justify-center">
+              <div className="relative">
+                <SparklesIcon className="w-14 h-14 md:w-16 md:h-16 text-primary-500 absolute -top-2 -left-3 transform -rotate-12" />
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center shadow-lg shadow-primary-500/20 mb-4">
+                  <motion.span 
+                    className="text-white text-3xl md:text-4xl font-extrabold"
+                    animate={{ 
+                      opacity: [1, 0.9, 1],
+                      scale: [1, 1.02, 1]
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }}
+                  >
+                    T
+                  </motion.span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+            <span className="bg-gradient-to-r from-primary-500 via-primary-400 to-violet-600 bg-clip-text text-transparent drop-shadow-sm">
               TuduAI
             </span>
           </h1>
@@ -88,8 +121,8 @@ export default function Home() {
             Plan less. Do more.
           </p>
           
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto mb-10">
-            The task manager that understands your language and organizes your life with AI.
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10">
+            The intelligent task manager that understands your language and transforms how you organize your life.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
