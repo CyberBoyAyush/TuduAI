@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useWorkspace } from '../context/WorkspaceContext'
+import WorkspaceSelector from './WorkspaceSelector'
 import { 
   SunIcon, 
   MoonIcon, 
@@ -16,7 +18,11 @@ import {
   CheckCircleIcon,
   Cog6ToothIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  FolderIcon,
+  KeyIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 
 // Logo component for better reusability
@@ -37,8 +43,10 @@ const Logo = ({ className = "" }) => (
 
 export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleShowCompletedTasks }) {
   const { currentUser, logout } = useAuth()
+  const { workspaces, activeWorkspaceId, switchWorkspace, getActiveWorkspace } = useWorkspace()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isWorkspaceSelectorOpen, setIsWorkspaceSelectorOpen] = useState(false)
   const location = useLocation()
   
   // Close mobile menu when route changes
@@ -46,13 +54,47 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
     setIsMobileMenuOpen(false)
   }, [location.pathname])
   
+  // Get the current active workspace
+  const activeWorkspace = getActiveWorkspace()
+  
   return (
     <nav className="border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 sticky top-0 z-40 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo - always visible */}
-        <Link to="/" aria-label="TuduAI Home">
-          <Logo />
-        </Link>
+        <div className="flex items-center">
+          <Link to="/" aria-label="TuduAI Home">
+            <Logo />
+          </Link>
+          
+          {/* Workspace selector (only when logged in) */}
+          {currentUser && (
+            <div className="ml-4 relative">
+              <motion.button
+                onClick={() => setIsWorkspaceSelectorOpen(!isWorkspaceSelectorOpen)}
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-neutral-800 dark:bg-neutral-800 hover:bg-neutral-700 text-white dark:hover:bg-neutral-700 transition-colors text-sm"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                aria-expanded={isWorkspaceSelectorOpen}
+                aria-label="Select workspace"
+              >
+                <span className="font-medium max-w-[100px] truncate">
+                  {activeWorkspace?.name || 'Default'}
+                </span>
+                <span className="hidden sm:inline text-xs opacity-70 ml-1">
+                  ⌥1
+                </span>
+              </motion.button>
+              
+              {/* Workspace selector dropdown */}
+              <div className="absolute left-0 mt-2 z-50">
+                <WorkspaceSelector
+                  isOpen={isWorkspaceSelectorOpen}
+                  onClose={() => setIsWorkspaceSelectorOpen(false)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Right side controls */}
         <div className="flex items-center space-x-2">

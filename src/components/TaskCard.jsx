@@ -208,7 +208,7 @@ export default function TaskCard({
       initial="initial"
       animate="animate"
       exit="exit"
-      className={`bg-white dark:bg-neutral-900 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-700 shadow-md mb-3 ${
+      className={`bg-white dark:bg-neutral-900 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-700 shadow-md mb-3 transition-opacity ${
         task.completed ? 'opacity-60' : 'opacity-100'
       }`}
     >

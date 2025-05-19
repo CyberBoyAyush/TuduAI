@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useWorkspace } from '../context/WorkspaceContext'
 import { v4 as uuidv4 } from 'uuid'
 
 /**
@@ -13,8 +14,9 @@ export default function useTasks() {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const { currentUser } = useAuth()
+  const { activeWorkspaceId } = useWorkspace()
   
-  // Load tasks from localStorage when user changes
+  // Load tasks from localStorage when user or workspace changes
   useEffect(() => {
     if (!currentUser) {
       setTasks([])
@@ -22,7 +24,7 @@ export default function useTasks() {
       return
     }
     
-    const userKey = `tasks_${currentUser.email}`
+    const userKey = `tasks_${currentUser.email}_${activeWorkspaceId}`
     const savedTasks = localStorage.getItem(userKey)
     
     if (savedTasks) {
@@ -32,15 +34,15 @@ export default function useTasks() {
     }
     
     setLoading(false)
-  }, [currentUser])
+  }, [currentUser, activeWorkspaceId])
   
   // Save tasks to localStorage when they change
   useEffect(() => {
     if (!currentUser || loading) return
     
-    const userKey = `tasks_${currentUser.email}`
+    const userKey = `tasks_${currentUser.email}_${activeWorkspaceId}`
     localStorage.setItem(userKey, JSON.stringify(tasks))
-  }, [tasks, currentUser, loading])
+  }, [tasks, currentUser, activeWorkspaceId, loading])
   
   /**
    * Add a new task
