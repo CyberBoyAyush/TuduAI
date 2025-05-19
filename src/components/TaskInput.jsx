@@ -12,7 +12,9 @@ import {
   BoltIcon, 
   LightBulbIcon,
   ArrowPathIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  ClockIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline'
 
 // Helper function to format task data as XML tags
@@ -214,13 +216,14 @@ export default function TaskInput({ onAddTask }) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className={`bg-white dark:bg-neutral-800 shadow-md rounded-xl overflow-hidden border border-gray-200 dark:border-neutral-700 transition-all ${
-          isExpanded ? 'p-5' : 'p-3'
+        className={`bg-white dark:bg-neutral-800 shadow-lg rounded-xl overflow-hidden border border-gray-200 dark:border-neutral-700 transition-all ${
+          isExpanded ? 'p-5' : 'p-4'
         }`}
       >
         {parsedTask && !parsedTask.dueDate ? (
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+              <ClockIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               When is "{parsedTask.title}" due?
             </h3>
             
@@ -313,41 +316,49 @@ export default function TaskInput({ onAddTask }) {
               }}
             />
             
-            <div className="mt-4 flex justify-between">
-              <button
+            <div className="mt-5 flex justify-between">
+              <motion.button
                 onClick={resetForm}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-3 py-1.5 rounded-md border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50"
               >
                 Cancel
-              </button>
+              </motion.button>
               
-              <button
+              <motion.button
                 onClick={() => finalizeTask({ dueDate: null, urgency: parsedTask.urgency })}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-1.5 rounded-md border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
               >
                 Skip (no due date)
-              </button>
+              </motion.button>
             </div>
           </div>
         ) : parsedTask && !parsedTask.urgency ? (
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+              <ExclamationCircleIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               How urgent is this task?
             </h3>
             
-            <div className="mb-4 text-md text-gray-700 dark:text-gray-300">
-              <span className="font-medium">{parsedTask.title}</span>
-              {parsedTask.dueDate && (
-                <span className="text-sm ml-2 text-gray-500 dark:text-gray-400">
-                  Due: {new Date(parsedTask.dueDate).toLocaleString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
-                </span>
-              )}
+            <div className="mb-4 text-md text-gray-700 dark:text-gray-300 p-3 bg-gray-50 dark:bg-neutral-700/30 rounded-lg border border-gray-200 dark:border-neutral-600/30">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{parsedTask.title}</span>
+                {parsedTask.dueDate && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                    <ClockIcon className="w-4 h-4 mr-1" />
+                    {new Date(parsedTask.dueDate).toLocaleString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                )}
+              </div>
             </div>
             
             <UrgencySelector 
@@ -364,26 +375,30 @@ export default function TaskInput({ onAddTask }) {
               initialValue={3}
             />
             
-            <div className="mt-4 flex justify-between">
-              <button
+            <div className="mt-5 flex justify-between">
+              <motion.button
                 onClick={resetForm}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-3 py-1.5 rounded-md border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50"
               >
                 Cancel
-              </button>
+              </motion.button>
               
-              <button
+              <motion.button
                 onClick={() => finalizeTask({ urgency: 3, dueDate: parsedTask.dueDate })}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-1.5 rounded-md border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
               >
                 Use Default (3)
-              </button>
+              </motion.button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="flex items-center gap-3">
-              <div className="bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/30 text-violet-600 dark:text-violet-400 p-2.5 rounded-lg shadow-sm">
                 <PlusIcon className="w-5 h-5" />
               </div>
               
@@ -394,7 +409,7 @@ export default function TaskInput({ onAddTask }) {
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setIsExpanded(true)}
                 placeholder="Add a task... (e.g., 'Learn JavaScript tomorrow at 7PM')"
-                className="flex-grow bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                className="flex-grow bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-base"
                 disabled={loading}
               />
               
@@ -404,25 +419,31 @@ export default function TaskInput({ onAddTask }) {
                   animate={{ scale: 1 }}
                   type="button"
                   onClick={parsePreview}
-                  className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-2 rounded-lg"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-2 rounded-lg transition-colors bg-violet-50 dark:bg-violet-900/20"
                 >
                   <LightBulbIcon className="w-5 h-5" />
                 </motion.button>
               )}
               
               {loading && (
-                <ArrowPathIcon className="w-5 h-5 text-violet-500 animate-spin" />
+                <div className="p-2">
+                  <ArrowPathIcon className="w-5 h-5 text-violet-500 animate-spin" />
+                </div>
               )}
               
-              <button
+              <motion.button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className={`px-4 py-2 rounded-lg text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                whileHover={{ scale: input.trim() && !loading ? 1.03 : 1 }}
+                whileTap={{ scale: input.trim() && !loading ? 0.97 : 1 }}
+                className={`px-4 py-2 rounded-lg text-white bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm ${
                   (!input.trim() || loading) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 Add
-              </button>
+              </motion.button>
             </div>
             
             <AnimatePresence>
@@ -435,14 +456,23 @@ export default function TaskInput({ onAddTask }) {
                   className="mt-4"
                 >
                   {/* Info notice */}
-                  <button
-                    type="button"
-                    onClick={() => setShowTips(!showTips)}
-                    className="text-xs flex items-center text-gray-500 dark:text-gray-400 mb-3"
-                  >
-                    <InformationCircleIcon className="w-4 h-4 mr-1" />
-                    {showTips ? 'Hide tips' : 'Type naturally, AI will parse your task'}
-                  </button>
+                  <div className="flex justify-between items-center mb-3">
+                    <motion.button
+                      type="button"
+                      onClick={() => setShowTips(!showTips)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="text-xs flex items-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-700/30 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors"
+                    >
+                      <InformationCircleIcon className="w-4 h-4 mr-1" />
+                      {showTips ? 'Hide tips' : 'Type naturally, AI will parse your task'}
+                    </motion.button>
+                    
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center bg-gray-50 dark:bg-neutral-900/50 px-3 py-1.5 rounded-full">
+                      <BoltIcon className="w-3 h-3 mr-1" />
+                      <span>GPT-4.1 Mini</span>
+                    </span>
+                  </div>
                   
                   <AnimatePresence>
                     {showTips && (
@@ -450,10 +480,13 @@ export default function TaskInput({ onAddTask }) {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mb-4 p-3 bg-gray-50 dark:bg-neutral-700/30 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                        className="mb-4 p-4 bg-gray-50 dark:bg-neutral-700/30 rounded-lg text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-neutral-700/50"
                       >
-                        <p>Try natural language like:</p>
-                        <ul className="list-disc ml-5 mt-1 space-y-1">
+                        <p className="font-medium mb-2 flex items-center">
+                          <LightBulbIcon className="w-4 h-4 mr-1.5 text-amber-500" />
+                          Try natural language like:
+                        </p>
+                        <ul className="list-disc ml-5 space-y-1.5">
                           <li>"Call mom tomorrow at 5pm"</li>
                           <li>"Submit report by Friday afternoon, urgency 5"</li>
                           <li>"Gym workout every Monday at 7am"</li>
@@ -469,42 +502,66 @@ export default function TaskInput({ onAddTask }) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="mb-4 p-3 bg-violet-50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-800/20 rounded-lg"
+                        className="mb-4 p-4 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/10 dark:to-indigo-900/10 border border-violet-100 dark:border-violet-800/20 rounded-lg shadow-sm"
                       >
-                        <h4 className="font-medium text-violet-800 dark:text-violet-300 mb-2">AI Parsed Your Task</h4>
-                        <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
-                          <p><span className="font-medium">Title:</span> {parsedTask.title}</p>
-                          <p>
-                            <span className="font-medium">Due:</span>{" "}
-                            {parsedTask.dueDate 
-                              ? new Date(parsedTask.dueDate).toLocaleString('en-US', {
-                                  weekday: 'short',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit'
-                                })
-                              : 'Not specified'}
-                          </p>
-                          <p>
-                            <span className="font-medium">Urgency:</span>{" "}
-                            {parsedTask.urgency ? `${parsedTask.urgency}/5` : 'Not specified'}
-                          </p>
+                        <h4 className="font-medium text-violet-800 dark:text-violet-300 mb-3 flex items-center">
+                          <LightBulbIcon className="w-4 h-4 mr-1.5" />
+                          AI Parsed Your Task
+                        </h4>
+                        <div className="text-sm space-y-2 text-gray-700 dark:text-gray-300">
+                          <div className="flex items-start">
+                            <span className="font-medium w-16 shrink-0">Title:</span>
+                            <span className="flex-grow">{parsedTask.title}</span>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="font-medium w-16 shrink-0">Due:</span>
+                            <span>
+                              {parsedTask.dueDate 
+                                ? <span className="flex items-center">
+                                    <ClockIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500 dark:text-indigo-400" />
+                                    {new Date(parsedTask.dueDate).toLocaleString('en-US', {
+                                      weekday: 'short',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: 'numeric',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                : 'Not specified'}
+                            </span>
+                          </div>
+                          <div className="flex items-start">
+                            <span className="font-medium w-16 shrink-0">Urgency:</span>
+                            <span>
+                              {parsedTask.urgency 
+                                ? <span className="flex items-center">
+                                    <span className={`inline-block w-3 h-3 rounded-full mr-1.5 ${
+                                      parsedTask.urgency >= 4.5 ? 'bg-red-500' :
+                                      parsedTask.urgency >= 3.5 ? 'bg-orange-500' :
+                                      parsedTask.urgency >= 2.5 ? 'bg-yellow-500' :
+                                      parsedTask.urgency >= 1.5 ? 'bg-blue-500' :
+                                      'bg-green-500'
+                                    }`}></span>
+                                    {parsedTask.urgency}/5
+                                  </span>
+                                : 'Not specified'}
+                            </span>
+                          </div>
                           
                           {/* Display follow-up message if present */}
                           {parsedTask.followUp && (
-                            <p className="mt-2 text-violet-600 dark:text-violet-400">
+                            <p className="mt-3 text-violet-600 dark:text-violet-400 border-t border-violet-100 dark:border-violet-800/30 pt-2">
                               <span className="font-medium">Next step:</span> {parsedTask.followUp}
                             </p>
                           )}
                           
                           {/* Show suggestions if available */}
                           {parsedTask.suggestions && parsedTask.suggestions.length > 0 && (
-                            <div className="mt-2">
-                              <p className="font-medium">Suggestions:</p>
-                              <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="mt-3 border-t border-violet-100 dark:border-violet-800/30 pt-2">
+                              <p className="font-medium mb-2">Suggestions:</p>
+                              <div className="flex flex-wrap gap-2">
                                 {parsedTask.suggestions.map((suggestion, index) => (
-                                  <button
+                                  <motion.button
                                     key={index}
                                     onClick={() => {
                                       // Handle suggestion click based on type
@@ -534,10 +591,12 @@ export default function TaskInput({ onAddTask }) {
                                         }
                                       }
                                     }}
-                                    className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-xs hover:bg-violet-200 dark:hover:bg-violet-800/50"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-3 py-1.5 bg-white dark:bg-neutral-800 text-violet-700 dark:text-violet-300 rounded-full text-xs hover:bg-violet-50 dark:hover:bg-violet-900/20 border border-violet-200 dark:border-violet-800/30 shadow-sm transition-colors"
                                   >
                                     {suggestion.displayText}
-                                  </button>
+                                  </motion.button>
                                 ))}
                               </div>
                             </div>
@@ -551,20 +610,16 @@ export default function TaskInput({ onAddTask }) {
                   <AnimatePresence>
                     {error && (
                       <motion.div 
-                        className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg text-sm text-red-600 dark:text-red-300"
+                        className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg text-sm text-red-600 dark:text-red-300 flex items-start"
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                       >
-                        {error}
+                        <ExclamationCircleIcon className="w-5 h-5 mr-2 shrink-0 text-red-500" />
+                        <span>{error}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  
-                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-4">
-                    <BoltIcon className="w-3 h-3 mr-1" />
-                    <span>Powered by GPT-4.1 Mini</span>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
