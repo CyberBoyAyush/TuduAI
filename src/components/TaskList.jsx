@@ -7,14 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { isToday, isPast, isNext7Days, isUpcoming } from '../utils/date'
 import TaskCard from './TaskCard'
 
-export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDeleteComment }) {
+export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDeleteComment, showCompletedTasks }) {
   const [expandedTaskId, setExpandedTaskId] = useState(null)
+  
+  // Filter tasks based on showCompletedTasks toggle
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return []
+    return showCompletedTasks ? tasks : tasks.filter(task => !task.completed)
+  }, [tasks, showCompletedTasks])
   
   // Group tasks by due date category
   const groupedTasks = useMemo(() => {
-    if (!tasks) return { today: [], upcoming: [], future: [] }
+    if (!filteredTasks.length) return { today: [], upcoming: [], future: [] }
     
-    return tasks.reduce(
+    return filteredTasks.reduce(
       (acc, task) => {
         if (!task.dueDate) {
           acc.today.push(task)
@@ -30,7 +36,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
       },
       { today: [], upcoming: [], future: [] }
     )
-  }, [tasks])
+  }, [filteredTasks])
   
   // Sort tasks by urgency and due date
   const sortTasks = (taskList) => {

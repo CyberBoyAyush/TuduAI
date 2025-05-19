@@ -22,6 +22,7 @@ function App() {
     
     return savedTheme || (prefersDark ? 'dark' : 'light')
   })
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false)
 
   // Apply the theme when it changes
   useEffect(() => {
@@ -36,18 +37,27 @@ function App() {
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
   }
+  
+  const toggleShowCompletedTasks = () => {
+    setShowCompletedTasks(prevState => !prevState)
+  }
 
   return (
     <AuthProvider>
       <div className="min-h-screen flex flex-col">
-        <Navbar toggleTheme={toggleTheme} theme={theme} />
+        <Navbar 
+          toggleTheme={toggleTheme} 
+          theme={theme} 
+          showCompletedTasks={showCompletedTasks} 
+          toggleShowCompletedTasks={toggleShowCompletedTasks} 
+        />
         <main className="flex-grow container mx-auto px-4 py-8">
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/todo" element={<Todo />} />
+              <Route path="/todo" element={<Todo showCompletedTasks={showCompletedTasks} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>

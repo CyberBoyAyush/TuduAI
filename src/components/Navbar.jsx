@@ -14,7 +14,9 @@ import {
   Bars3Icon,
   XMarkIcon,
   CheckCircleIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 
 // Logo component for better reusability
@@ -33,7 +35,7 @@ const Logo = ({ className = "" }) => (
   </div>
 )
 
-export default function Navbar({ toggleTheme, theme }) {
+export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleShowCompletedTasks }) {
   const { currentUser, logout } = useAuth()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -54,6 +56,23 @@ export default function Navbar({ toggleTheme, theme }) {
         
         {/* Right side controls */}
         <div className="flex items-center space-x-2">
+          {/* Show completed tasks toggle - only show on todo page */}
+          {currentUser && location.pathname === '/todo' && (
+            <motion.button
+              onClick={toggleShowCompletedTasks}
+              className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label={showCompletedTasks ? "Hide completed tasks" : "Show completed tasks"}
+            >
+              {showCompletedTasks ? (
+                <EyeSlashIcon className="w-5 h-5" />
+              ) : (
+                <EyeIcon className="w-5 h-5" />
+              )}
+            </motion.button>
+          )}
+          
           {/* Theme toggle */}
           <motion.button
             onClick={toggleTheme}

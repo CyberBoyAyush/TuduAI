@@ -11,7 +11,7 @@ import TaskInput from '../components/TaskInput'
 import TaskList from '../components/TaskList'
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
-export default function Todo() {
+export default function Todo({ showCompletedTasks }) {
   const { currentUser, loading: authLoading } = useAuth()
   const { 
     tasks, 
@@ -73,6 +73,7 @@ export default function Todo() {
         onDelete={deleteTask}
         onAddComment={addComment}
         onDeleteComment={deleteComment}
+        showCompletedTasks={showCompletedTasks}
       />
     </div>
   )
