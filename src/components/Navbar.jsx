@@ -36,6 +36,16 @@ export default function Navbar({ toggleTheme, theme }) {
         
         {/* Right side controls */}
         <div className="flex items-center space-x-3">
+          {/* Nav Links */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link 
+              to="/todo" 
+              className="text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400"
+            >
+              Todo
+            </Link>
+          </div>
+          
           {/* Theme toggle */}
           <motion.button
             onClick={toggleTheme}

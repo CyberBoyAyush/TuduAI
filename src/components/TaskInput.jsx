@@ -15,6 +15,48 @@ import {
   InformationCircleIcon
 } from '@heroicons/react/24/outline'
 
+// Helper function to format task data as XML tags
+const formatTaskAsXML = (taskData) => {
+  let output = '';
+  
+  // Add title tag if present
+  if (taskData.title) {
+    output += `<title>${taskData.title}</title>\n`;
+  }
+  
+  // Add date tag if present
+  if (taskData.dueDate) {
+    output += `<date>${taskData.dueDate}</date>\n`;
+  }
+  
+  // Add urgency tag if present
+  if (taskData.urgency !== null) {
+    output += `<urgency>${taskData.urgency.toFixed(1)}</urgency>\n`;
+  }
+  
+  // Add follow_up tag
+  output += `<follow_up>${taskData.followUp || 'Anything else to add?'}</follow_up>\n`;
+  
+  // Add still_needed tag if there are missing fields
+  if (taskData.stillNeeded && taskData.stillNeeded.length > 0) {
+    output += `<still_needed>${taskData.stillNeeded.join(', ')}</still_needed>\n`;
+  }
+  
+  // Add suggestions
+  if (taskData.suggestions && taskData.suggestions.length > 0) {
+    taskData.suggestions.forEach(suggestion => {
+      output += `<suggestion type="${suggestion.type}" value="${suggestion.value}">${suggestion.displayText}</suggestion>\n`;
+    });
+  }
+  
+  // Add todo_complete tag if all required fields are present
+  if (taskData.title && taskData.dueDate && taskData.urgency !== null) {
+    output += `<todo_complete>\n`;
+  }
+  
+  return output;
+};
+
 export default function TaskInput({ onAddTask }) {
   const [input, setInput] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
@@ -46,6 +88,10 @@ export default function TaskInput({ onAddTask }) {
       
       // Store the parsed result
       setParsedTask(result)
+      
+      // Log the formatted XML output to console for debugging
+      console.log("Parsed task as XML:");
+      console.log(formatTaskAsXML(result));
       
       // Check if we need additional information
       if (!result.dueDate && !result.urgency) {
@@ -93,10 +139,55 @@ export default function TaskInput({ onAddTask }) {
     setLoading(true)
     
     try {
+      // Display the current time information to the user for context
+      const now = new Date();
+      console.log(`Current time for parsing: ${now.toLocaleString()}`);
+      
       const result = await parseTaskInput(input)
       
       // Log for debugging
       console.log('Parsed task:', result)
+      console.log('XML format:')
+      console.log(formatTaskAsXML(result))
+      
+      // Ensure all dates are in the future
+      if (result.dueDate) {
+        const dueDate = new Date(result.dueDate);
+        const now = new Date();
+        
+        // If the parsed time is in the past but on the same day, assume it's for tomorrow
+        if (dueDate < now) {
+          console.log("Adjusting time: parsed time is in the past");
+          
+          // If it's the same day but earlier time
+          if (dueDate.toDateString() === now.toDateString()) {
+            dueDate.setDate(dueDate.getDate() + 1);
+            console.log(`Adjusted to tomorrow: ${dueDate.toLocaleString()}`);
+          } else {
+            // For past dates (like "Monday" when today is Wednesday)
+            // Keep incrementing by 1 day until in the future
+            while (dueDate < now) {
+              dueDate.setDate(dueDate.getDate() + 1);
+            }
+            console.log(`Adjusted to future date: ${dueDate.toLocaleString()}`);
+          }
+          result.dueDate = dueDate.toISOString();
+        }
+      }
+      
+      // Set urgency to 4.5 for keywords like investor, deadline, urgent
+      if (!result.urgency && 
+          (input.toLowerCase().includes("investor") || 
+           input.toLowerCase().includes("deadline") || 
+           input.toLowerCase().includes("urgent"))) {
+        result.urgency = 4.5;
+        console.log("Set urgency to 4.5 based on keywords");
+        
+        // Remove urgency from stillNeeded if it exists
+        if (result.stillNeeded) {
+          result.stillNeeded = result.stillNeeded.filter(item => item !== "urgency");
+        }
+      }
       
       // Show the parsed result
       setParsedTask(result)
@@ -135,21 +226,89 @@ export default function TaskInput({ onAddTask }) {
             
             <TimeSuggestions 
               onSelect={(date) => {
-                const updatedTask = {
-                  ...parsedTask,
-                  dueDate: typeof date === 'string' ? date : date.toISOString()
-                };
-                
-                // If we now have all required fields, complete the task
-                if (updatedTask.dueDate && updatedTask.urgency) {
-                  onAddTask(updatedTask);
-                  resetForm();
-                } else {
-                  // We still need to get the urgency
-                  finalizeTask({ 
-                    dueDate: updatedTask.dueDate,
-                    urgency: updatedTask.urgency 
+                try {
+                  // Create a formatted version of the date that would be easily understood in natural language
+                  const dateObj = new Date(date);
+                  const formattedDate = dateObj.toLocaleString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                   });
+                  
+                  console.log(`Selected date: ${formattedDate}`);
+                  
+                  // Generate a natural language prompt that would result in this date
+                  const naturalLanguagePrompt = `${parsedTask.title} on ${formattedDate}`;
+                  
+                  // Log the natural language prompt for debugging
+                  console.log(`Natural language prompt for parsing: ${naturalLanguagePrompt}`);
+                  
+                  // Try to parse with the natural language parser to get consistent results
+                  parseTaskInput(naturalLanguagePrompt)
+                    .then(result => {
+                      console.log("Natural language parsed result:", result);
+                      
+                      // Use the original title from the parsed task, but the date from the natural language processing
+                      const updatedTask = {
+                        ...parsedTask,
+                        dueDate: result.dueDate || date, // Fallback to original date if parsing fails
+                      };
+                      
+                      // Verify the date is valid and in the future
+                      const dueDate = new Date(updatedTask.dueDate);
+                      const now = new Date();
+                      
+                      if (dueDate < now) {
+                        console.warn("Due date is in the past, adjusting");
+                        // Simple adjustment - if it's the same day but earlier time, set to tomorrow same time
+                        if (dueDate.toDateString() === now.toDateString()) {
+                          dueDate.setDate(dueDate.getDate() + 1);
+                        } else {
+                          // Otherwise, increment until in the future
+                          while (dueDate < now) {
+                            dueDate.setDate(dueDate.getDate() + 1);
+                          }
+                        }
+                        updatedTask.dueDate = dueDate.toISOString();
+                      }
+                      
+                      // If we now have all required fields, complete the task
+                      if (updatedTask.dueDate && updatedTask.urgency) {
+                        onAddTask(updatedTask);
+                        resetForm();
+                      } else {
+                        // We still need to get the urgency
+                        finalizeTask({ 
+                          dueDate: updatedTask.dueDate,
+                          urgency: updatedTask.urgency 
+                        });
+                      }
+                    })
+                    .catch(error => {
+                      console.error("Error parsing natural language date:", error);
+                      // If there's an error parsing, just use the date as is
+                      const updatedTask = {
+                        ...parsedTask,
+                        dueDate: date
+                      };
+                      
+                      if (updatedTask.dueDate && updatedTask.urgency) {
+                        onAddTask(updatedTask);
+                        resetForm();
+                      } else {
+                        finalizeTask({ 
+                          dueDate: updatedTask.dueDate,
+                          urgency: updatedTask.urgency 
+                        });
+                      }
+                    });
+                } catch (error) {
+                  console.error("Error processing selected date:", error);
+                  // Fallback - use date directly if there's any error
+                  finalizeTask({ dueDate: date, urgency: parsedTask.urgency });
                 }
               }}
             />
@@ -325,12 +484,64 @@ export default function TaskInput({ onAddTask }) {
                                   hour: 'numeric',
                                   minute: '2-digit'
                                 })
-                              : 'No due date'}
+                              : 'Not specified'}
                           </p>
                           <p>
                             <span className="font-medium">Urgency:</span>{" "}
                             {parsedTask.urgency ? `${parsedTask.urgency}/5` : 'Not specified'}
                           </p>
+                          
+                          {/* Display follow-up message if present */}
+                          {parsedTask.followUp && (
+                            <p className="mt-2 text-violet-600 dark:text-violet-400">
+                              <span className="font-medium">Next step:</span> {parsedTask.followUp}
+                            </p>
+                          )}
+                          
+                          {/* Show suggestions if available */}
+                          {parsedTask.suggestions && parsedTask.suggestions.length > 0 && (
+                            <div className="mt-2">
+                              <p className="font-medium">Suggestions:</p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {parsedTask.suggestions.map((suggestion, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      // Handle suggestion click based on type
+                                      if (suggestion.type === 'datetime' || suggestion.type === 'date' || suggestion.type === 'time') {
+                                        const updatedTask = {
+                                          ...parsedTask,
+                                          dueDate: suggestion.value
+                                        };
+                                        // If this completes the task, submit it
+                                        if (updatedTask.title && updatedTask.urgency) {
+                                          onAddTask(updatedTask);
+                                          resetForm();
+                                        } else {
+                                          setParsedTask(updatedTask);
+                                        }
+                                      } else if (suggestion.type === 'urgency') {
+                                        const updatedTask = {
+                                          ...parsedTask,
+                                          urgency: suggestion.value
+                                        };
+                                        // If this completes the task, submit it
+                                        if (updatedTask.title && updatedTask.dueDate) {
+                                          onAddTask(updatedTask);
+                                          resetForm();
+                                        } else {
+                                          setParsedTask(updatedTask);
+                                        }
+                                      }
+                                    }}
+                                    className="px-3 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full text-xs hover:bg-violet-200 dark:hover:bg-violet-800/50"
+                                  >
+                                    {suggestion.displayText}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

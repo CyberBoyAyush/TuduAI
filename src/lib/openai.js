@@ -3,9 +3,12 @@
  * Purpose: Provides OpenAI GPT-4.1 Mini integration for parsing task input
  * 
  * Parses natural language input into structured task data with:
- * - title: The main task description
+ * - title: The main task description (without date/time info)
  * - dueDate: When the task is due (ISO string or null)
  * - urgency: Priority level from 1-5 (or null if not specified)
+ * - followUp: Brief, direct question or statement about what's needed next
+ * - stillNeeded: Array of missing fields
+ * - suggestions: Array of date/time/urgency suggestions
  */
 import OpenAI from 'openai'
 
@@ -18,13 +21,34 @@ const openai = new OpenAI({
 /**
  * Parse natural language task input using GPT-4.1 Mini
  * @param {string} prompt - User input like "Learn JavaScript tomorrow at 7PM"
- * @returns {Promise<Object>} Parsed task object with title, dueDate, and urgency
+ * @returns {Promise<Object>} Parsed task object with title, dueDate, urgency, followUp, stillNeeded, and suggestions
  */
 export const parseTaskInput = async (prompt) => {
   // Return default for empty prompts
   if (!prompt || !prompt.trim()) {
-    return { title: "Untitled Task", dueDate: null, urgency: null };
+    return { 
+      title: "Untitled Task", 
+      dueDate: null, 
+      urgency: null,
+      followUp: "What's this task about?",
+      stillNeeded: ["title", "date", "urgency"],
+      suggestions: []
+    };
   }
+  
+  // Get current date and time for context
+  const now = new Date();
+  const currentTimeStr = now.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+  const currentDateStr = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
   
   try {
     const completion = await openai.chat.completions.create({
@@ -32,24 +56,46 @@ export const parseTaskInput = async (prompt) => {
       messages: [
         {
           role: "system",
-          content: `You are a task parsing assistant that extracts structured data from natural language.
+          content: `You are a concise todo assistant that helps users create structured todos.
+
+          CURRENT CONTEXT:
+          - Current date: ${currentDateStr}
+          - Current time: ${currentTimeStr}
+          - Current ISO timestamp: ${now.toISOString()}
           
           RULES:
-          - Extract the core task title, removing any time/date/urgency mentions
-          - Convert any date reference (today, tomorrow, next week, Friday, etc.) to a precise ISO string
-          - Extract urgency level (1-5) from explicit mentions or keywords
-          - Today's date is ${new Date().toISOString().split('T')[0]}
-          - Set times to 9:00 AM by default if only a date is provided
-          - If a time is mentioned without AM/PM, infer based on context
-          - Set urgency to null if not specified
-          - Set dueDate to null if not specified
-          - Ensure the title is never shorter than 3 words unless the entire prompt is very short
+          1. Be extremely concise in follow-up messages
+          2. Never include date/time in titles
+          3. Always convert relative dates to absolute ISO format
+          4. Provide contextual suggestions (morning for breakfast, evening for dinner, etc.)
+          5. Keep responses direct and to the point
+          6. If you have a date, don't ask for it again
+          7. If there's a mention of "investor", "deadline", "urgent", set urgency to 4.5 automatically
+          8. Don't go in circles - listen carefully to user input
+          9. All date/time suggestions MUST be in the future
+          10. If current time is afternoon, don't suggest morning times for today
+          
+          Required fields to extract:
+          - title: Clear title without date/time info (e.g. "Meet with investor" not "Meet investor tomorrow")
+          - dueDate: ISO format date (YYYY-MM-DDTHH:MM:SS)
+          - urgency: Number from 1.0-5.0
+          
+          Additional fields to generate:
+          - followUp: Brief, direct question or statement about what's needed next
+          - stillNeeded: Array of missing fields (from: "title", "date", "urgency")
+          - suggestions: Array of suggestions for missing fields, each with:
+              - type: "date", "time", "datetime", or "urgency"
+              - value: ISO string for dates/times, number for urgency
+              - displayText: Human-readable text to show the user
           
           Format your response as a JSON object with these exact keys:
           { 
-            "title": string,
+            "title": string or null,
             "dueDate": string (ISO format) or null,
-            "urgency": number (1-5) or null
+            "urgency": number (1-5) or null,
+            "followUp": string,
+            "stillNeeded": string[],
+            "suggestions": [{ "type": string, "value": string|number, "displayText": string }]
           }`
         },
         {
@@ -74,32 +120,162 @@ export const parseTaskInput = async (prompt) => {
       result.title = "Untitled Task";
     }
     
+    // Ensure all required fields exist
+    if (!result.followUp) {
+      result.followUp = "Anything else to add?";
+    }
+    
+    if (!result.stillNeeded || !Array.isArray(result.stillNeeded)) {
+      result.stillNeeded = [];
+      if (!result.title) result.stillNeeded.push("title");
+      if (!result.dueDate) result.stillNeeded.push("date");
+      if (!result.urgency) result.stillNeeded.push("urgency");
+    }
+    
+    if (!result.suggestions || !Array.isArray(result.suggestions)) {
+      result.suggestions = [];
+      
+      // Add default suggestions for missing fields
+      if (!result.dueDate && !result.stillNeeded.includes("date")) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        
+        result.suggestions.push({
+          type: "datetime",
+          value: tomorrow.toISOString(),
+          displayText: "Tomorrow morning"
+        });
+        
+        const today = new Date(now);
+        today.setHours(now.getHours() + 2, 0, 0, 0);
+        if (today.getHours() < 23) {
+          result.suggestions.push({
+            type: "datetime",
+            value: today.toISOString(),
+            displayText: "Later today"
+          });
+        }
+      }
+      
+      if (!result.urgency && !result.stillNeeded.includes("urgency")) {
+        result.suggestions.push(
+          {
+            type: "urgency",
+            value: 4.0,
+            displayText: "High (4)"
+          },
+          {
+            type: "urgency",
+            value: 3.0,
+            displayText: "Medium (3)"
+          }
+        );
+      }
+    }
+    
+    // Check for investor, deadline, or urgent keywords for automatic urgency
+    if (!result.urgency && 
+        (prompt.toLowerCase().includes("investor") || 
+         prompt.toLowerCase().includes("deadline") || 
+         prompt.toLowerCase().includes("urgent"))) {
+      result.urgency = 4.5;
+      // Remove urgency from still needed if it was set automatically
+      result.stillNeeded = result.stillNeeded.filter(item => item !== "urgency");
+    }
+    
+    // Ensure all dates in suggestions are in the future
+    if (result.suggestions && Array.isArray(result.suggestions)) {
+      result.suggestions = result.suggestions.map(suggestion => {
+        if ((suggestion.type === "date" || suggestion.type === "datetime" || suggestion.type === "time") && 
+            suggestion.value) {
+          const suggestionDate = new Date(suggestion.value);
+          if (suggestionDate < now) {
+            // Adjust date to be in the future
+            if (suggestionDate.toDateString() === now.toDateString()) {
+              // Same day but earlier time, add a day
+              suggestionDate.setDate(suggestionDate.getDate() + 1);
+            } else {
+              // Past date, set to appropriate future time
+              while (suggestionDate < now) {
+                suggestionDate.setDate(suggestionDate.getDate() + 1);
+              }
+            }
+            suggestion.value = suggestionDate.toISOString();
+          }
+        }
+        return suggestion;
+      });
+    }
+    
     return result;
   } catch (error) {
     console.error("Error parsing task with OpenAI:", error);
     
     // Fallback to local parsing when API fails
-    return fallbackParsing(prompt);
+    return fallbackParsing(prompt, now);
   }
 }
 
 /**
  * Fallback function for local parsing when OpenAI is unavailable
  * @param {string} prompt - User input
+ * @param {Date} currentTime - Current time reference
  * @returns {Object} Best-effort parsed task data
  */
-const fallbackParsing = (prompt) => {
+const fallbackParsing = (prompt, currentTime) => {
+  const now = currentTime || new Date();
+  
   if (!prompt || !prompt.trim()) {
-    return { title: "Untitled Task", dueDate: null, urgency: null };
+    return { 
+      title: "Untitled Task", 
+      dueDate: null, 
+      urgency: null,
+      followUp: "What's this task about?",
+      stillNeeded: ["title", "date", "urgency"],
+      suggestions: [
+        {
+          type: "datetime",
+          value: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          displayText: "Tomorrow morning"
+        },
+        {
+          type: "urgency",
+          value: 3,
+          displayText: "Medium priority"
+        }
+      ]
+    };
   }
   
-  const today = new Date();
+  const today = new Date(now);
   let dueDate = null;
   let title = prompt.trim();
   let urgency = null;
+  let stillNeeded = [];
+  let suggestions = [];
   
   // Create a clean version of the prompt for easier parsing
   const lowerPrompt = prompt.toLowerCase();
+  
+  // Automatically set higher urgency for investor, deadline, or urgent mentions
+  if (lowerPrompt.includes("investor") || lowerPrompt.includes("deadline") || lowerPrompt.includes("urgent")) {
+    urgency = 4.5;
+  } else {
+    stillNeeded.push("urgency");
+    suggestions.push(
+      {
+        type: "urgency",
+        value: 4.0,
+        displayText: "High (4)"
+      },
+      {
+        type: "urgency",
+        value: 3.0,
+        displayText: "Medium (3)"
+      }
+    );
+  }
   
   // -------------------------------------------------------------------
   // DATE PARSING
@@ -167,10 +343,42 @@ const fallbackParsing = (prompt) => {
   // TIME PARSING
   // -------------------------------------------------------------------
   
-  // Look for time expressions like "at 7PM", "at 3:30pm", "7PM", "3:30pm", "5 o'clock"
-  // More comprehensive than before - captures various time formats
-  const timeRegex = /\b(?:at\s+)?(\d{1,2})(?::(\d{1,2}))?\s*(?:([ap]\.?m\.?)|o'clock)?\b/i;
-  const timeMatch = lowerPrompt.match(timeRegex);
+  // Look for time expressions like "at 7PM", "at 3:30pm", "7PM", "3:30pm", "5 o'clock", "evening", "morning", etc.
+  // First check for specific time patterns with numbers
+  const specificTimeRegex = /\b(?:at\s+)?(\d{1,2})(?::(\d{1,2}))?\s*(?:([ap]\.?m\.?)|o'clock)?\b/i;
+  const pmAmIndicator = /\b(?:\d{1,2})(?::(?:\d{1,2}))?\s*([ap]\.?m\.?)\b/i; // Separate check for AM/PM
+  const militaryTimeRegex = /\b(\d{1,2})(?::(\d{1,2}))?\s*(?:hours?|h)\b/i;
+  
+  // Check for PM specifically mentioned in the entire prompt
+  const isPmMentioned = /\b(?:evening|night|afternoon|pm|p\.m\.|[2-9]pm)\b/i.test(lowerPrompt);
+  const isAmMentioned = /\b(?:morning|dawn|am|a\.m\.|[2-9]am)\b/i.test(lowerPrompt);
+  
+  const timeMatch = lowerPrompt.match(specificTimeRegex) || lowerPrompt.match(militaryTimeRegex);
+  const pmAmMatch = lowerPrompt.match(pmAmIndicator);
+  
+  // Check for general time descriptors if no specific time found
+  const timeDescriptors = [
+    // More precise time periods
+    { terms: ['early morning', 'dawn', 'sunrise', 'first thing in the morning'], hour: 6, minute: 0 },
+    { terms: ['morning', 'before noon', 'am', 'a.m.'], hour: 9, minute: 0 },
+    { terms: ['late morning'], hour: 11, minute: 0 },
+    { terms: ['noon', 'lunch', 'midday', 'lunch time', 'lunch hour'], hour: 12, minute: 0 },
+    { terms: ['early afternoon', 'after lunch'], hour: 13, minute: 0 },
+    { terms: ['afternoon', 'mid afternoon', 'pm', 'p.m.'], hour: 15, minute: 0 },
+    { terms: ['late afternoon', 'end of day', 'before evening'], hour: 17, minute: 0 },
+    { terms: ['evening', 'dusk', 'sunset', 'dinnertime', 'dinner time', '6pm', '7pm'], hour: 18, minute: 0 },
+    { terms: ['early evening'], hour: 19, minute: 0 },
+    { terms: ['night', 'tonight', 'nighttime', '8pm', '9pm'], hour: 20, minute: 0 },
+    { terms: ['late night', '10pm', '11pm'], hour: 23, minute: 0 },
+    { terms: ['midnight', '12am'], hour: 0, minute: 0 },
+    // Handle relative time expressions
+    { regex: /\bin\s+(\d+)\s+hours?\b/i, hourOffset: true },
+    { regex: /\bin\s+an\s+hour\b/i, hourOffset: 1 },
+    { regex: /\bin\s+half\s+an\s+hour\b/i, minuteOffset: 30 },
+    { regex: /\bin\s+(\d+)\s+minutes?\b/i, minuteOffset: true },
+    { regex: /\bafter\s+(\d+)\s+hours?\b/i, hourOffset: true },
+    { regex: /\bafter\s+(\d+)\s+minutes?\b/i, minuteOffset: true },
+  ];
   
   if (timeMatch) {
     // If we have a time but no date yet, set date to today
@@ -182,22 +390,49 @@ const fallbackParsing = (prompt) => {
     let hour = parseInt(hourStr, 10);
     const minutes = minuteStr ? parseInt(minuteStr, 10) : 0;
     
-    // Convert to 24-hour format
-    if (ampmStr && /p/i.test(ampmStr) && hour < 12) {
-      hour += 12; // Convert PM to 24-hour
-    } else if (ampmStr && /a/i.test(ampmStr) && hour === 12) {
-      hour = 0; // 12AM is 0 in 24-hour
-    } else if (!ampmStr && hour < 12) {
-      // No AM/PM specified
-      const currentHour = today.getHours();
+    // Handle military time format (24-hour clock)
+    if (lowerPrompt.match(/\b\d{1,2}(?::\d{1,2})?\s*(?:hours?|h)\b/i)) {
+      // Already in 24-hour format
+      if (hour > 23) hour = 23; // Validate hour
+    } else {
+      // Check for AM/PM indicator from both the matched time and the entire prompt
+      const ampmIndicator = ampmStr || (pmAmMatch ? pmAmMatch[1] : null);
       
-      // For ambiguous times (no am/pm), assume reasonable defaults
-      if (currentHour > hour) {
-        // If the hour has already passed today, assume PM
-        hour += 12;
-      } else if (hour < 7) {
-        // Very early hours without am/pm likely mean PM
-        hour += 12;
+      // Convert to 24-hour format for 12-hour clock
+      if (ampmIndicator && /p/i.test(ampmIndicator) && hour < 12) {
+        hour += 12; // Convert PM to 24-hour
+      } else if (ampmIndicator && /a/i.test(ampmIndicator) && hour === 12) {
+        hour = 0; // 12AM is 0 in 24-hour
+      } else if (!ampmIndicator) {
+        // No explicit AM/PM specified in the time expression, use context clues
+        
+        // Special handling for common hour expressions with context clues
+        if (hour >= 1 && hour <= 6) {
+          // For hours 1-6, check for PM context clues in the entire prompt
+          if (isPmMentioned || lowerPrompt.includes('evening') || lowerPrompt.includes('night') || 
+              lowerPrompt.includes('afternoon') || lowerPrompt.includes('dinner')) {
+            hour += 12; // Convert to PM based on context
+            console.log(`Converted ${hour-12} to ${hour} (PM) based on context clues`);
+          }
+        } else if (hour >= 7 && hour <= 11) {
+          // For 7-11, use context to determine AM/PM
+          if (isPmMentioned && !isAmMentioned) {
+            hour += 12; // Convert to PM based on context
+            console.log(`Converted ${hour-12} to ${hour} (PM) based on context clues`);
+          }
+        } else if (hour === 12) {
+          // 12 without AM/PM is usually noon, not midnight
+          if (isAmMentioned && !isPmMentioned) {
+            hour = 0; // Convert to midnight if AM is mentioned
+          }
+        } else if (hour > 12 && hour < 24) {
+          // Hours > 12 without AM/PM are already in 24-hour format
+        } else if (hour === 0) {
+          // 0 hour means midnight
+        } else {
+          // Invalid hour, default to 9AM
+          hour = 9;
+        }
       }
     }
     
@@ -206,9 +441,69 @@ const fallbackParsing = (prompt) => {
     
     // Remove the time expression from the title
     title = title.replace(fullMatch, '').trim();
-  } else if (dueDate) {
-    // If we have a date but no time specified, set a reasonable default time (9AM)
-    dueDate.setHours(9, 0, 0, 0);
+  } else {
+    // If no specific time found, check for time descriptors
+    let timeDescriptorFound = false;
+    
+    // First check for relative time offsets
+    for (const descriptor of timeDescriptors) {
+      if (descriptor.regex) {
+        const match = lowerPrompt.match(descriptor.regex);
+        if (match) {
+          // If we have a descriptor but no date yet, set date to today
+          if (!dueDate) {
+            dueDate = new Date(today);
+          }
+          
+          if (descriptor.hourOffset === true && match[1]) {
+            // "in X hours" or "after X hours"
+            const hours = parseInt(match[1], 10);
+            dueDate.setHours(dueDate.getHours() + hours);
+          } else if (typeof descriptor.hourOffset === 'number') {
+            // "in an hour"
+            dueDate.setHours(dueDate.getHours() + descriptor.hourOffset);
+          } else if (descriptor.minuteOffset === true && match[1]) {
+            // "in X minutes" or "after X minutes"
+            const minutes = parseInt(match[1], 10);
+            dueDate.setMinutes(dueDate.getMinutes() + minutes);
+          } else if (typeof descriptor.minuteOffset === 'number') {
+            // "in half an hour"
+            dueDate.setMinutes(dueDate.getMinutes() + descriptor.minuteOffset);
+          }
+          
+          title = title.replace(match[0], '').trim();
+          timeDescriptorFound = true;
+          break;
+        }
+      }
+    }
+    
+    // If no relative offsets found, check for named time periods
+    if (!timeDescriptorFound) {
+      for (const descriptor of timeDescriptors) {
+        if (descriptor.terms) {
+          for (const term of descriptor.terms) {
+            if (lowerPrompt.includes(term)) {
+              // If we have a descriptor but no date yet, set date to today
+              if (!dueDate) {
+                dueDate = new Date(today);
+              }
+              
+              dueDate.setHours(descriptor.hour, descriptor.minute, 0, 0);
+              title = title.replace(new RegExp(`\\b${term}\\b`, 'i'), '').trim();
+              timeDescriptorFound = true;
+              break;
+            }
+          }
+          if (timeDescriptorFound) break;
+        }
+      }
+    }
+    
+    // If we have a date but no time specified from any method, set a reasonable default time (9AM)
+    if (dueDate && !timeDescriptorFound) {
+      dueDate.setHours(9, 0, 0, 0);
+    }
   }
   
   // -------------------------------------------------------------------
@@ -291,18 +586,98 @@ const fallbackParsing = (prompt) => {
   
   // For any date in the past, push it to the future
   if (dueDate && dueDate < today) {
+    const dueHour = dueDate.getHours();
+    const dueMinute = dueDate.getMinutes();
+    
     // If it's earlier today, keep the time but make it tomorrow
     if (dueDate.toDateString() === today.toDateString()) {
+      console.log("Adjusting time: parsed time is in the past today");
+      dueDate.setDate(dueDate.getDate() + 1);
+    } else if (dueDate.getDate() === today.getDate() &&
+              dueDate.getMonth() === today.getMonth() &&
+              dueDate.getFullYear() === today.getFullYear()) {
+      // Same day but somehow earlier (this is an edge case)
+      console.log("Adjusting time: same day but earlier time");
       dueDate.setDate(dueDate.getDate() + 1);
     } else {
-      // If it's a past date, move it to next occurrence (e.g., "Monday" when today is Wednesday)
-      dueDate.setDate(dueDate.getDate() + 7);
+      // If it's a past date (e.g., "Monday" when today is Wednesday)
+      console.log("Adjusting date: parsed date is in the past");
+      
+      // For weekday references, skip to next week
+      if (lowerPrompt.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i) ||
+          lowerPrompt.match(/\bnext\s+(week|month)\b/i)) {
+        console.log("Weekday or next week/month reference found, adding 7 days");
+        dueDate.setDate(dueDate.getDate() + 7);
+      } else {
+        // For other cases, just increment the date until it's in the future
+        while (dueDate < today) {
+          dueDate.setDate(dueDate.getDate() + 1);
+        }
+      }
     }
+    
+    // Verify the adjustment worked
+    console.log(`Adjusted due date: ${dueDate.toISOString()}`);
+  }
+  
+  // Create date suggestions if no date was found
+  if (!dueDate) {
+    stillNeeded.push("date");
+    
+    // Generate some reasonable date suggestions
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    
+    const laterToday = new Date(today);
+    laterToday.setHours(today.getHours() + 2, 0, 0, 0);
+    
+    // Only suggest times that are in the future
+    if (laterToday > today) {
+      suggestions.push({
+        type: "datetime",
+        value: laterToday.toISOString(),
+        displayText: "Later today"
+      });
+    }
+    
+    suggestions.push({
+      type: "datetime",
+      value: tomorrow.toISOString(),
+      displayText: "Tomorrow morning"
+    });
+    
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setHours(9, 0, 0, 0);
+    
+    suggestions.push({
+      type: "datetime",
+      value: nextWeek.toISOString(),
+      displayText: "Next week"
+    });
+  }
+  
+  // Generate follow-up message based on missing information
+  let followUp = "";
+  
+  if (!title || title === "Untitled Task") {
+    stillNeeded.push("title");
+    followUp = "What would you like to call this task?";
+  } else if (!dueDate) {
+    followUp = "When is this task due?";
+  } else if (!urgency) {
+    followUp = "How urgent is this task? (1-5)";
+  } else {
+    followUp = "Anything else to add?";
   }
   
   return {
-    title,
+    title: title === "Untitled Task" ? null : title,
     dueDate: dueDate ? dueDate.toISOString() : null,
-    urgency
+    urgency,
+    followUp,
+    stillNeeded,
+    suggestions
   };
 };
