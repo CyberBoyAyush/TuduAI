@@ -71,7 +71,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             <div className="ml-4 relative">
               <motion.button
                 onClick={() => setIsWorkspaceSelectorOpen(!isWorkspaceSelectorOpen)}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-neutral-800 dark:bg-neutral-800 hover:bg-neutral-700 text-white dark:hover:bg-neutral-700 transition-colors text-sm"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 text-gray-800 dark:text-white transition-colors text-sm"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 aria-expanded={isWorkspaceSelectorOpen}
@@ -90,6 +90,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 <WorkspaceSelector
                   isOpen={isWorkspaceSelectorOpen}
                   onClose={() => setIsWorkspaceSelectorOpen(false)}
+                  theme={theme}
                 />
               </div>
             </div>
