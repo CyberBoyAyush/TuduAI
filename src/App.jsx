@@ -1,0 +1,60 @@
+/**
+ * File: App.jsx
+ * Purpose: Root layout with Navbar and <Routes />
+ */
+import { useState, useEffect } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
+import Navbar from './components/Navbar'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Todo from './pages/Todo'
+import { AuthProvider } from './context/AuthContext'
+
+function App() {
+  const location = useLocation()
+  const [theme, setTheme] = useState(() => {
+    // Check if theme is stored in localStorage
+    const savedTheme = localStorage.getItem('theme')
+    // Check if OS prefers dark mode
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    
+    return savedTheme || (prefersDark ? 'dark' : 'light')
+  })
+
+  // Apply the theme when it changes
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
+  }
+
+  return (
+    <AuthProvider>
+      <div className="min-h-screen flex flex-col">
+        <Navbar toggleTheme={toggleTheme} theme={theme} />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/todo" element={<Todo />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AnimatePresence>
+        </main>
+      </div>
+    </AuthProvider>
+  )
+}
+
+export default App
