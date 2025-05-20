@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import Navbar from './components/Navbar'
+import ReminderService from './components/ReminderService'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -53,6 +54,7 @@ function App() {
             showCompletedTasks={showCompletedTasks} 
             toggleShowCompletedTasks={toggleShowCompletedTasks} 
           />
+          <ReminderService />
           <main className="flex-grow container mx-auto px-4 py-8">
             <AnimatePresence mode="wait">
               <Routes location={location} key={location.pathname}>

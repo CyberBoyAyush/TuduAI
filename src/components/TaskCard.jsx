@@ -526,6 +526,7 @@ export default function TaskCard({
           >
             <CommentSection
               taskId={task.id}
+              taskTitle={task.title}
               comments={task.comments || []}
               onAddComment={onAddComment}
               onDeleteComment={onDeleteComment}

@@ -6,26 +6,76 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate } from '../utils/date'
 import { useAuth } from '../context/AuthContext'
+import { useWorkspace } from '../context/WorkspaceContext'
+import { parseReminder, saveReminder } from '../utils/reminders'
 import { 
   PaperAirplaneIcon, 
   TrashIcon,
   LightBulbIcon,
-  BellAlertIcon
+  BellAlertIcon,
+  ClockIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline'
 
-export default function CommentSection({ taskId, comments, onAddComment, onDeleteComment }) {
+export default function CommentSection({ taskId, taskTitle, comments, onAddComment, onDeleteComment }) {
   const [newComment, setNewComment] = useState('')
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [commentToDelete, setCommentToDelete] = useState(null)
+  const [reminderProcessing, setReminderProcessing] = useState(false)
+  const [reminderError, setReminderError] = useState(null)
   const { currentUser } = useAuth()
+  const { activeWorkspaceId } = useWorkspace()
   
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault()
     
     if (!newComment.trim()) return
     
-    onAddComment(taskId, newComment)
-    setNewComment('')
+    // Check if this is a reminder command
+    const reminderRegex = /^!(?:remindme|rmd)\s+/i
+    if (reminderRegex.test(newComment)) {
+      setReminderProcessing(true)
+      setReminderError(null)
+      
+      try {
+        // Parse the reminder text and date
+        const parsedReminder = await parseReminder(newComment)
+        
+        if (parsedReminder.error) {
+          setReminderError(parsedReminder.error)
+          // Still add the comment, but note that we couldn't parse the date
+          onAddComment(taskId, newComment)
+          setNewComment('')
+        } else {
+          // Save the reminder
+          const contextData = {
+            currentUser,
+            taskId,
+            workspaceId: activeWorkspaceId,
+            taskTitle
+          }
+          
+          saveReminder(parsedReminder, contextData)
+          
+          // Add a regular comment
+          onAddComment(taskId, newComment)
+          setNewComment('')
+        }
+      } catch (error) {
+        console.error('Error processing reminder:', error)
+        setReminderError('Failed to set reminder, but comment was added')
+        
+        // Still add the comment even if reminder processing failed
+        onAddComment(taskId, newComment)
+        setNewComment('')
+      } finally {
+        setReminderProcessing(false)
+      }
+    } else {
+      // Regular comment
+      onAddComment(taskId, newComment)
+      setNewComment('')
+    }
   }
   
   const handleDeleteComment = (commentId) => {
@@ -46,15 +96,17 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
   
   // Process special commands in comments
   const processCommentText = (text) => {
-    // Handle command: !remindme
-    if (text.startsWith('!remindme')) {
+    // Handle command: !remindme or !rmd
+    if (text.match(/^!(?:remindme|rmd)\s+/i)) {
+      const reminderText = text.replace(/^!(?:remindme|rmd)\s+/i, '').trim()
+      
       return (
         <div className="flex items-start space-x-2">
           <BellAlertIcon className="w-4 h-4 text-amber-500 dark:text-yellow-500 shrink-0 mt-0.5" />
           <div>
             <span className="font-medium text-gray-800 dark:text-gray-200">Reminder set</span>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {text.replace('!remindme', '').trim() || 'Reminder for this task'}
+              {reminderText || 'Reminder for this task'}
             </p>
           </div>
         </div>
@@ -70,7 +122,7 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
             <span className="font-medium text-gray-800 dark:text-gray-200">Help</span>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Available commands:
-              <br />• !remindme - Set a reminder
+              <br />• !remindme or !rmd - Set a reminder (e.g., "!rmd call John tomorrow at 3pm")
               <br />• !help - Show this help message
             </p>
           </div>
@@ -172,7 +224,14 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Add a comment or use !help"
             className="w-full p-2 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm outline-none transition-all"
+            disabled={reminderProcessing}
           />
+          {reminderError && (
+            <div className="absolute -bottom-6 left-0 text-xs text-red-500 flex items-center">
+              <ExclamationCircleIcon className="w-3 h-3 mr-1" />
+              {reminderError}
+            </div>
+          )}
         </div>
         
         <motion.button
@@ -180,9 +239,13 @@ export default function CommentSection({ taskId, comments, onAddComment, onDelet
           className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:opacity-50 shadow-sm"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          disabled={!newComment.trim()}
+          disabled={!newComment.trim() || reminderProcessing}
         >
-          <PaperAirplaneIcon className="w-5 h-5" />
+          {reminderProcessing ? (
+            <ClockIcon className="w-5 h-5 animate-pulse" />
+          ) : (
+            <PaperAirplaneIcon className="w-5 h-5" />
+          )}
         </motion.button>
       </form>
       

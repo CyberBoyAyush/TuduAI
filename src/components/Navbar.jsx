@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import WorkspaceSelector from './WorkspaceSelector'
+import RemindersPanel from './RemindersPanel'
 import { 
   SunIcon, 
   MoonIcon, 
@@ -22,7 +23,8 @@ import {
   FolderIcon,
   KeyIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  BellAlertIcon
 } from '@heroicons/react/24/outline'
 
 // Logo component for better reusability
@@ -47,6 +49,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isWorkspaceSelectorOpen, setIsWorkspaceSelectorOpen] = useState(false)
+  const [isRemindersPanelOpen, setIsRemindersPanelOpen] = useState(false)
   const location = useLocation()
   
   // Close mobile menu when route changes
@@ -113,6 +116,19 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               ) : (
                 <EyeIcon className="w-5 h-5" />
               )}
+            </motion.button>
+          )}
+          
+          {/* Reminders button - only show when logged in */}
+          {currentUser && (
+            <motion.button
+              onClick={() => setIsRemindersPanelOpen(true)}
+              className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Your reminders"
+            >
+              <BellAlertIcon className="w-5 h-5" />
             </motion.button>
           )}
           
@@ -214,6 +230,12 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
           {/* Remove mobile menu button since there are no navigation links */}
         </div>
       </div>
+      
+      {/* Reminders Panel */}
+      <RemindersPanel 
+        isOpen={isRemindersPanelOpen} 
+        onClose={() => setIsRemindersPanelOpen(false)} 
+      />
     </nav>
   )
 }
