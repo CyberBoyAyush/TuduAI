@@ -15,7 +15,8 @@ import {
   ClockIcon,
   ChatBubbleBottomCenterTextIcon,
   ExclamationCircleIcon,
-  LightBulbIcon
+  LightBulbIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 
 export default function TaskCard({
@@ -439,47 +440,56 @@ export default function TaskCard({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white dark:bg-neutral-800 rounded-lg p-5 w-80 z-20 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
+            className="bg-white dark:bg-neutral-800 rounded-xl p-6 w-96 z-20 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white flex items-center">
-                <ClockIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
+                <span className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg mr-3">
+                  <ClockIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                </span>
                 Reschedule Task
               </h3>
               <motion.button 
                 onClick={handleCloseReschedule}
-                className="text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white transition-colors"
-                whileHover={{ scale: 1.1 }}
+                className="text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white transition-colors bg-gray-100 dark:bg-neutral-700 p-1 rounded-full"
+                whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
                 whileTap={{ scale: 0.9 }}
               >
-                ✕
+                <XMarkIcon className="w-5 h-5" />
               </motion.button>
             </div>
             
-            <div className="mb-2 text-gray-600 dark:text-gray-300 text-sm">
-              <span className="font-medium">{task.title}</span>
+            <div className="mb-4 text-gray-600 dark:text-gray-300 text-sm bg-gray-50 dark:bg-neutral-700/40 p-3 rounded-lg border border-gray-200 dark:border-neutral-600/30">
+              <span className="font-medium text-gray-800 dark:text-white">{task.title}</span>
             </div>
             
-            <div className="mb-4">
+            <div className="mb-5">
+              <label htmlFor="reschedule-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                When would you like to reschedule this task?
+              </label>
               <div className="flex items-center gap-2 mb-3">
-                <input
-                  type="text"
-                  value={rescheduleInput}
-                  onChange={(e) => setRescheduleInput(e.target.value)}
-                  placeholder="tomorrow, next week, May 5th..."
-                  className="flex-grow p-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-md text-gray-800 dark:text-white text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRescheduleSubmit(e);
-                  }}
-                />
+                <div className="relative flex-grow">
+                  <input
+                    id="reschedule-input"
+                    type="text"
+                    value={rescheduleInput}
+                    onChange={(e) => setRescheduleInput(e.target.value)}
+                    placeholder="tomorrow, next week, May 5th..."
+                    className="w-full p-3 pl-10 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-800 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleRescheduleSubmit(e);
+                    }}
+                  />
+                  <ClockIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+                </div>
                 <motion.button
                   onClick={handleRescheduleSubmit}
                   disabled={isProcessing}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {isProcessing ? 
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 
@@ -490,9 +500,11 @@ export default function TaskCard({
               
               {/* Current date indicator */}
               {task.dueDate && (
-                <div className="flex items-center text-sm mb-4 p-2 bg-gray-50 dark:bg-neutral-700/30 rounded-md border border-gray-200 dark:border-neutral-600/30">
-                  <ClockIcon className="w-4 h-4 mr-1.5 text-gray-500 dark:text-gray-400" />
-                  <span className="text-gray-600 dark:text-gray-300">
+                <div className="flex items-center text-sm mb-5 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
+                  <div className="bg-amber-100 dark:bg-amber-800/30 p-1.5 rounded-full mr-2">
+                    <ClockIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <span className="text-amber-800 dark:text-amber-200">
                     Currently due: {new Date(task.dueDate).toLocaleString('en-US', {
                       weekday: 'short',
                       month: 'short',
@@ -507,8 +519,8 @@ export default function TaskCard({
               {/* Suggestions */}
               {suggestions.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-2 flex items-center">
-                    <LightBulbIcon className="w-3.5 h-3.5 mr-1 text-indigo-500 dark:text-indigo-400" />
+                  <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3 flex items-center">
+                    <LightBulbIcon className="w-4 h-4 mr-1.5 text-amber-500" />
                     Quick Options:
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -516,10 +528,11 @@ export default function TaskCard({
                       <motion.button
                         key={index}
                         onClick={() => handleSelectSuggestion(suggestion)}
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(79, 70, 229, 0.1)' }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-neutral-700 hover:bg-gray-200 dark:hover:bg-neutral-600 text-gray-800 dark:text-gray-200 rounded-full transition-colors shadow-sm border border-gray-200 dark:border-neutral-700 font-medium"
+                        className="px-4 py-2 text-sm bg-gray-100 dark:bg-neutral-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-gray-800 dark:text-gray-200 rounded-lg transition-colors shadow-sm border border-gray-200 dark:border-neutral-700 font-medium flex items-center"
                       >
+                        <ClockIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
                         {suggestion.displayText}
                       </motion.button>
                     ))}
@@ -528,8 +541,9 @@ export default function TaskCard({
               )}
               
               {/* Help text */}
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-                Try typing something like "tomorrow afternoon" or "next Tuesday at 3pm"
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-5 bg-gray-50 dark:bg-neutral-700/20 p-2.5 rounded-lg border border-gray-200 dark:border-neutral-700/50">
+                <span className="font-medium block mb-1">💡 Pro tip:</span>
+                Try typing natural phrases like "tomorrow afternoon", "next Tuesday at 3pm", or "June 15th at 10am"
               </p>
             </div>
           </motion.div>

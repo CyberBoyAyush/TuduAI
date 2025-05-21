@@ -184,12 +184,33 @@ export function WorkspaceProvider({ children }) {
 
   // Switch active workspace
   const switchWorkspace = (id) => {
-    const workspaceExists = workspaces.some(w => w.$id === id);
+    console.log('switchWorkspace called with id:', id);
+    console.log('Current workspaces:', workspaces);
+    
+    // Check both id and $id properties to be safe
+    const workspaceExists = workspaces.some(w => (w.$id === id || w.id === id));
+    
     if (!workspaceExists) {
-      console.error(`Workspace with id ${id} not found`);
+      console.error(`Workspace with id ${id} not found in`, workspaces);
+      
+      // Try to find a workspace with a similar ID
+      const similarWorkspace = workspaces.find(w => 
+        (w.$id && w.$id.includes(id)) || 
+        (w.id && w.id.includes(id))
+      );
+      
+      if (similarWorkspace) {
+        console.log('Found similar workspace:', similarWorkspace);
+        const actualId = similarWorkspace.$id || similarWorkspace.id;
+        console.log(`Using similar workspace id: ${actualId}`);
+        setActiveWorkspaceId(actualId);
+        return;
+      }
+      
       return;
     }
     
+    console.log(`Switching to workspace: ${id}`);
     setActiveWorkspaceId(id);
   };
 
