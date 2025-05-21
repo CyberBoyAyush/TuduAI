@@ -2,7 +2,7 @@
  * File: WorkspaceSelector.jsx
  * Purpose: Display and manage workspace selection with keyboard shortcuts
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { 
@@ -34,27 +34,14 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
   
-  // Setup keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Only if the user isn't typing in an input
-      if (document.activeElement.tagName === 'INPUT' || 
-          document.activeElement.tagName === 'TEXTAREA') {
-        return
-      }
-      
-      // Alt + 1-5 for switching workspaces
-      if (e.altKey && e.key >= '1' && e.key <= '5') {
-        const index = parseInt(e.key) - 1
-        if (index < workspaces.length) {
-          switchWorkspace(workspaces[index].id)
-        }
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [workspaces, switchWorkspace])
+  // Detect if user is on Mac or Windows/Linux
+  const isMac = useMemo(() => {
+    return navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
+           navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
+  }, []);
+  
+  // Shortcut prefix based on platform
+  const shortcutPrefix = isMac ? '⌥' : 'Alt+';
   
   const handleSubmitNewWorkspace = (e) => {
     e.preventDefault()
@@ -139,8 +126,9 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
           className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-gray-200 dark:border-neutral-800 max-h-96 overflow-hidden w-44"
         >
           <div className="bg-white dark:bg-neutral-900 sticky top-0 z-10">
-            <div className="px-3 pt-2.5 pb-1 text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide">
-              Workspaces
+            <div className="px-3 pt-2.5 pb-1 text-xs text-gray-500 dark:text-gray-400 uppercase font-medium tracking-wide flex justify-between items-center">
+              <span>Workspaces</span>
+              <span className="text-[10px] font-normal">{shortcutPrefix}+Number</span>
             </div>
           </div>
           
@@ -181,39 +169,56 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                     </form>
                   ) : (
                     <div 
-                      className={`flex items-center justify-between px-3 py-1.5 cursor-pointer transition-colors ${
-                        workspace.id === activeWorkspaceId
+                      className={`group flex items-center justify-between px-3 py-1.5 cursor-pointer transition-colors ${
+                        (workspace.id === activeWorkspaceId || workspace.$id === activeWorkspaceId)
                           ? 'bg-gray-200 dark:bg-neutral-700 text-gray-800 dark:text-white'
                           : 'hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-300'
                       }`}
-                      onClick={() => switchWorkspace(workspace.id)}
+                      onClick={() => switchWorkspace(workspace.$id || workspace.id)}
                     >
                       <div className="flex items-center overflow-hidden">
                         <span className="truncate">{workspace.name}</span>
                       </div>
                       
                       <div className="flex items-center">
-                        <span className="text-xs text-gray-500 dark:text-gray-500 ml-1.5">
-                          ⌥{index + 1}
-                        </span>
+                        {index < 5 && (
+                          <span className="text-xs bg-gray-100 dark:bg-neutral-800 text-gray-500 dark:text-gray-400 py-0.5 px-1.5 rounded-md ml-1.5 font-mono">
+                            {shortcutPrefix}{index + 1}
+                          </span>
+                        )}
                         
-                        {/* Show delete button only if not the default workspace */}
-                        {!workspace.isDefault ? (
-                          <button 
+                        {/* Show edit and delete buttons on hover */}
+                        <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                          {/* Edit button */}
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDelete(workspace.id);
+                              startEditing(workspace);
                             }}
-                            className="ml-1.5 p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                            title="Delete workspace"
+                            className="ml-1.5 p-1 text-gray-500 hover:text-indigo-500 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors"
+                            title="Edit workspace name"
                           >
-                            <TrashIcon className="w-3 h-3" />
+                            <PencilIcon className="w-3 h-3" />
                           </button>
-                        ) : (
-                          <div className="ml-1.5 p-1 text-gray-300 dark:text-gray-600 cursor-not-allowed" title="Cannot delete default workspace">
-                            <TrashIcon className="w-3 h-3" />
-                          </div>
-                        )}
+                          
+                          {/* Show delete button only if not the default workspace */}
+                          {!workspace.isDefault ? (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(workspace.id);
+                              }}
+                              className="p-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                              title="Delete workspace"
+                            >
+                              <TrashIcon className="w-3 h-3" />
+                            </button>
+                          ) : (
+                            <div className="p-1 text-gray-300 dark:text-gray-600 cursor-not-allowed" title="Cannot delete default workspace">
+                              <TrashIcon className="w-3 h-3" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

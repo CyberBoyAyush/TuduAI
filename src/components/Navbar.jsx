@@ -2,7 +2,7 @@
  * File: Navbar.jsx
  * Purpose: App navigation bar with logo, theme toggle, profile icon, and logout button
  */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -83,6 +83,92 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [profileRef, workspaceRef])
   
+  // Handle keyboard shortcuts for workspace switching
+  const handleKeyboardShortcuts = useCallback((event) => {
+    console.log('Keydown event:', event.key, 'Alt:', event.altKey, 'KeyCode:', event.keyCode);
+    
+    // Only handle if user is not in an input field
+    if (document.activeElement.tagName === 'INPUT' || 
+        document.activeElement.tagName === 'TEXTAREA') {
+      console.log('Input field active, ignoring shortcut');
+      return;
+    }
+    
+    // Check for Option/Alt + number keys (1-5)
+    // Check both key and keyCode for better compatibility
+    if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+      let keyNum = null;
+      
+      // Check for numeric keys across the top of keyboard (1-5)
+      if (event.key >= '1' && event.key <= '5') {
+        keyNum = parseInt(event.key);
+      } 
+      // Also check numeric keypad (1-5) using keyCodes
+      else if (event.keyCode >= 49 && event.keyCode <= 53) {
+        keyNum = event.keyCode - 48;  // KeyCode 49 = '1', etc.
+      }
+      // Also check numpad keys
+      else if (event.keyCode >= 97 && event.keyCode <= 101) {
+        keyNum = event.keyCode - 96;  // KeyCode 97 = numpad '1', etc.
+      }
+      
+      console.log('Detected key number:', keyNum);
+      
+      // If we have a valid number key
+      if (keyNum !== null && keyNum >= 1 && keyNum <= 5) {
+        // Prevent default browser behavior
+        event.preventDefault();
+        
+        console.log('Valid workspace shortcut pressed:', keyNum);
+        console.log('Available workspaces:', workspaces);
+        
+        // Find the workspace at the corresponding index (0-indexed)
+        const targetIndex = keyNum - 1;
+        
+        if (workspaces && workspaces.length > targetIndex) {
+          const targetWorkspace = workspaces[targetIndex];
+          console.log('Target workspace:', targetWorkspace);
+          
+          if (!targetWorkspace) {
+            console.error('No workspace found at index', targetIndex);
+            return;
+          }
+          
+          // Log current and target workspace ID
+          const workspaceId = targetWorkspace.$id || targetWorkspace.id;
+          console.log('Current workspace ID:', activeWorkspaceId);
+          console.log('Target workspace ID:', workspaceId);
+          
+          // From checking WorkspaceContext.jsx, we know workspaces use $id
+          if (targetWorkspace.$id && targetWorkspace.$id !== activeWorkspaceId) {
+            console.log('Switching to workspace by $id:', targetWorkspace.$id);
+            switchWorkspace(targetWorkspace.$id);
+          } else if (targetWorkspace.id && targetWorkspace.id !== activeWorkspaceId) {
+            // Fallback to id for default workspaces
+            console.log('Switching to workspace by id:', targetWorkspace.id);
+            switchWorkspace(targetWorkspace.id);
+          } else {
+            console.log('Already on this workspace, not switching');
+          }
+        } else {
+          console.log('No workspace at index', targetIndex, 'Available:', workspaces.length);
+        }
+      }
+    }
+  }, [workspaces, activeWorkspaceId, switchWorkspace]);
+  
+  // Set up keyboard shortcut listener
+  useEffect(() => {
+    // Only set up shortcuts if user is logged in
+    if (currentUser) {
+      document.addEventListener('keydown', handleKeyboardShortcuts);
+      
+      return () => {
+        document.removeEventListener('keydown', handleKeyboardShortcuts);
+      };
+    }
+  }, [currentUser, handleKeyboardShortcuts]);
+  
   return (
     <>
       <nav className="border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 backdrop-blur-md bg-opacity-90 dark:bg-opacity-90 sticky top-0 z-40 shadow-sm">
@@ -103,6 +189,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                   whileTap={{ scale: 0.97 }}
                   aria-expanded={isWorkspaceSelectorOpen}
                   aria-label="Select workspace"
+                  title="Press Option/Alt + number to switch workspaces"
                   initial={{ boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}
                   animate={{ 
                     boxShadow: isWorkspaceSelectorOpen 
