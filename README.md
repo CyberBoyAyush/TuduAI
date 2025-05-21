@@ -51,10 +51,16 @@ VITE_APPWRITE_DATABASE_ID=your-database-id
 VITE_APPWRITE_WORKSPACES_COLLECTION_ID=your-workspaces-collection-id
 VITE_APPWRITE_TASKS_COLLECTION_ID=your-tasks-collection-id
 VITE_APPWRITE_REMINDERS_COLLECTION_ID=your-reminders-collection-id
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+# No longer needed in client code - set this as a Vercel Secret
+# VITE_OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-4. Set up Appwrite:
+4. For deployment, add your OpenAI API key as a Vercel Secret:
+```bash
+vercel secrets add openai_api_key your_openai_api_key_here
+```
+
+5. Set up Appwrite:
    - Create an Appwrite account at [https://appwrite.io/](https://appwrite.io/)
    - Create a new project and database
    - Create the following collections with these schemas:
