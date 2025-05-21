@@ -11,7 +11,6 @@ import useTasks from '../hooks/useTasks'
 import TaskInput from '../components/TaskInput'
 import TaskList from '../components/TaskList'
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
-import workspaceService from '../api/workspaceService'
 
 export default function Todo({ showCompletedTasks }) {
   const { currentUser, loading: authLoading } = useAuth()
@@ -37,22 +36,6 @@ export default function Todo({ showCompletedTasks }) {
       navigate('/login')
     }
   }, [currentUser, authLoading, navigate])
-  
-  // Clean up workspaces when component mounts
-  useEffect(() => {
-    const cleanupWorkspaces = async () => {
-      if (currentUser) {
-        try {
-          console.log("Todo: Cleaning up workspaces for user", currentUser.$id);
-          await workspaceService.cleanupDefaultWorkspaces(currentUser.$id);
-        } catch (error) {
-          console.error("Error cleaning up workspaces:", error);
-        }
-      }
-    };
-    
-    cleanupWorkspaces();
-  }, [currentUser]);
   
   const handleAddTask = async (taskData) => {
     setIsAddingTask(true);

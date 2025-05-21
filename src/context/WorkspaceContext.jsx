@@ -2,7 +2,7 @@
  * File: WorkspaceContext.jsx
  * Purpose: Manages workspaces for the user to organize tasks
  */
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import workspaceService from '../api/workspaceService';
 
@@ -23,6 +23,7 @@ export function WorkspaceProvider({ children }) {
   const [workspaces, setWorkspaces] = useState(DEFAULT_WORKSPACES);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState('default');
   const [loading, setLoading] = useState(true);
+  const hasCleanedUp = useRef(false);
 
   // Load workspaces from Appwrite when user changes
   useEffect(() => {
@@ -34,13 +35,17 @@ export function WorkspaceProvider({ children }) {
           setWorkspaces(DEFAULT_WORKSPACES);
           setActiveWorkspaceId('default');
           setLoading(false);
+          hasCleanedUp.current = false;
         }
         return;
       }
 
       try {
-        // First clean up any duplicate default workspaces that might exist
-        await workspaceService.cleanupDefaultWorkspaces(currentUser.$id);
+        // Only perform cleanup once per session for this user
+        if (!hasCleanedUp.current) {
+          await workspaceService.cleanupDefaultWorkspaces(currentUser.$id);
+          hasCleanedUp.current = true;
+        }
         
         // Now fetch all workspaces for the user
         const fetchedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
@@ -48,28 +53,23 @@ export function WorkspaceProvider({ children }) {
         if (!isMounted) return;
         
         if (fetchedWorkspaces && fetchedWorkspaces.length > 0) {
-          console.log('Setting fetched workspaces:', fetchedWorkspaces);
           setWorkspaces(fetchedWorkspaces);
           
           // Find the default workspace
           const defaultWorkspace = fetchedWorkspaces.find(w => w.isDefault === true);
           
           if (defaultWorkspace) {
-            console.log('Setting active workspace to default:', defaultWorkspace.$id);
             setActiveWorkspaceId(defaultWorkspace.$id);
           } else {
             // If no default workspace, use the first one
-            console.log('No default workspace found, using first workspace');
             setActiveWorkspaceId(fetchedWorkspaces[0].$id);
           }
         } else {
           // If no workspaces, create a default one
-          console.log('No workspaces found, creating default workspace');
           const defaultWorkspace = await workspaceService.createDefaultWorkspace(currentUser.$id);
           
           if (!isMounted) return;
           
-          console.log('Created default workspace:', defaultWorkspace);
           setWorkspaces([defaultWorkspace]);
           setActiveWorkspaceId(defaultWorkspace.$id);
         }
@@ -190,7 +190,6 @@ export function WorkspaceProvider({ children }) {
       return;
     }
     
-    console.log('Switching to workspace:', id);
     setActiveWorkspaceId(id);
   };
 
@@ -208,6 +207,7 @@ export function WorkspaceProvider({ children }) {
       const defaultWorkspace = await workspaceService.createDefaultWorkspace(currentUser.$id);
       setWorkspaces([defaultWorkspace]);
       setActiveWorkspaceId(defaultWorkspace.$id);
+      hasCleanedUp.current = true;
     } catch (error) {
       console.error("Error resetting workspaces:", error);
     }

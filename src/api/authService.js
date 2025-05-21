@@ -1,5 +1,10 @@
 import { account, ID } from './appwrite';
 
+// Add a cache for the current user to prevent multiple API calls
+let cachedUser = null;
+let lastFetchTime = 0;
+const CACHE_EXPIRY = 30000; // 30 seconds
+
 export const authService = {
   // Register a new user
   async register(email, password, name) {
@@ -7,16 +12,12 @@ export const authService = {
       // Create user account with a string ID
       const userId = crypto.randomUUID();
       
-      console.log("Creating user with ID:", userId);
-      
       const response = await account.create(
         userId,
         email,
         password,
         name
       );
-      
-      console.log("User created successfully:", response);
       
       if (response) {
         // Login after successful registration
@@ -33,9 +34,9 @@ export const authService = {
   // Login user
   async login(email, password) {
     try {
-      console.log("Attempting login for:", email);
       const session = await account.createEmailPasswordSession(email, password);
-      console.log("Login successful:", session);
+      // Clear cache on login to force a refresh
+      cachedUser = null;
       return session;
     } catch (error) {
       console.error("Login error:", error);
@@ -46,20 +47,35 @@ export const authService = {
   // Logout user
   async logout() {
     try {
+      // Clear cache on logout
+      cachedUser = null;
       return await account.deleteSession('current');
     } catch (error) {
       throw error;
     }
   },
 
-  // Get current user
+  // Get current user with caching to prevent duplicate calls
   async getCurrentUser() {
     try {
+      const now = Date.now();
+      
+      // Return cached user if it exists and hasn't expired
+      if (cachedUser && (now - lastFetchTime) < CACHE_EXPIRY) {
+        return cachedUser;
+      }
+      
+      // Get fresh user data
       const user = await account.get();
-      console.log("Current user:", user);
+      
+      // Update cache
+      cachedUser = user;
+      lastFetchTime = now;
+      
       return user;
     } catch (error) {
       console.error("Error getting current user:", error);
+      cachedUser = null;
       return null;
     }
   },

@@ -16,12 +16,6 @@ const workspacesCollectionId = import.meta.env.VITE_APPWRITE_WORKSPACES_COLLECTI
 const tasksCollectionId = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID || 'tasks';
 const remindersCollectionId = import.meta.env.VITE_APPWRITE_REMINDERS_COLLECTION_ID || 'reminders';
 
-// Log the values to help with debugging
-console.log('Database ID:', databaseId);
-console.log('Workspaces Collection ID:', workspacesCollectionId);
-console.log('Tasks Collection ID:', tasksCollectionId);
-console.log('Reminders Collection ID:', remindersCollectionId);
-
 // Export initialized services and constants
 export { client, account, databases, ID, Query };
 export { databaseId, workspacesCollectionId, tasksCollectionId, remindersCollectionId }; 

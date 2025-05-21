@@ -5,6 +5,15 @@
 import { parseTaskInput } from '../lib/openai'
 import reminderService from '../api/reminderService'
 
+// Local caching for reminders data
+const reminderCache = {
+  dueReminders: {
+    data: null,
+    timestamp: 0
+  },
+  CACHE_EXPIRY: 20000 // 20 seconds - shorter than the service level cache
+};
+
 /**
  * Parse a reminder command and extract the reminder text and time
  * @param {string} text - The reminder text (e.g., "!remindme call John tomorrow at 5pm")
@@ -74,6 +83,9 @@ export const saveReminder = async (reminderData, contextData) => {
       currentUser.name
     )
     
+    // Invalidate cache when creating a new reminder
+    reminderCache.dueReminders.data = null;
+    
     return newReminder.$id
   } catch (error) {
     console.error('Error saving reminder:', error)
@@ -91,6 +103,7 @@ export const getUserReminders = async (userId, workspaceId) => {
   if (!userId) return []
   
   try {
+    // Use the service's caching system
     const reminders = await reminderService.getReminders(userId)
     
     if (workspaceId) {
@@ -113,6 +126,7 @@ export const getTaskReminders = async (taskId) => {
   if (!taskId) return []
   
   try {
+    // Use the service's caching system
     return await reminderService.getTaskReminders(taskId)
   } catch (error) {
     console.error('Error getting task reminders:', error)
@@ -131,6 +145,10 @@ export const updateReminderStatus = async (reminderId, status) => {
   
   try {
     await reminderService.updateReminderStatus(reminderId, status)
+    
+    // Invalidate cache when updating a reminder's status
+    reminderCache.dueReminders.data = null;
+    
     return true
   } catch (error) {
     console.error('Error updating reminder status:', error)
@@ -148,6 +166,10 @@ export const deleteReminder = async (reminderId) => {
   
   try {
     await reminderService.deleteReminder(reminderId)
+    
+    // Invalidate cache when deleting a reminder
+    reminderCache.dueReminders.data = null;
+    
     return true
   } catch (error) {
     console.error('Error deleting reminder:', error)
@@ -163,11 +185,17 @@ export const deleteReminder = async (reminderId) => {
 export const getDueReminders = async (userId) => {
   const now = new Date()
   
+  // Check if we have valid cached data
+  if (reminderCache.dueReminders.data && 
+      (now - reminderCache.dueReminders.timestamp < reminderCache.CACHE_EXPIRY)) {
+    return reminderCache.dueReminders.data;
+  }
+  
   try {
     // Get all reminders or just this user's reminders if userId is provided
     const allReminders = await reminderService.getReminders(userId)
     
-    return allReminders.filter(reminder => {
+    const dueReminders = allReminders.filter(reminder => {
       // Only consider pending reminders with a due date
       if (reminder.status !== 'pending' || !reminder.dueDate) {
         return false
@@ -176,6 +204,12 @@ export const getDueReminders = async (userId) => {
       const dueDate = new Date(reminder.dueDate)
       return dueDate <= now
     })
+    
+    // Update cache
+    reminderCache.dueReminders.data = dueReminders;
+    reminderCache.dueReminders.timestamp = now.getTime();
+    
+    return dueReminders
   } catch (error) {
     console.error('Error getting due reminders:', error)
     return []

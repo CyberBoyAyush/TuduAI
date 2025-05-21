@@ -2,7 +2,7 @@
  * File: ReminderService.jsx
  * Purpose: Background service to check for due reminders
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDueReminders, updateReminderStatus } from '../utils/reminders'
 
@@ -13,19 +13,7 @@ import { getDueReminders, updateReminderStatus } from '../utils/reminders'
  */
 const sendReminderEmail = async (reminder) => {
   // In a real application, you would connect to a backend service to send emails
-  console.log(`[MOCK EMAIL] Sending reminder to ${reminder.userEmail}:`, {
-    subject: `Reminder: ${reminder.text}`,
-    body: `
-      Hello ${reminder.userName},
-      
-      This is a reminder for: ${reminder.text}
-      
-      View your task: [Link to task]
-      
-      Regards,
-      The TuduAI Team
-    `
-  })
+  // Mock email functionality - removed logging
   
   return new Promise((resolve) => {
     // Simulate network request
@@ -43,10 +31,8 @@ const processDueReminders = async (userId) => {
   try {
     const dueReminders = await getDueReminders(userId)
     
-    console.log(`Found ${dueReminders.length} due reminders to process`)
-    
     // Process each due reminder
-    for (const reminder of dueReminders) {
+    const processPromises = dueReminders.map(async (reminder) => {
       try {
         // Send the email notification
         const emailSent = await sendReminderEmail(reminder)
@@ -58,9 +44,15 @@ const processDueReminders = async (userId) => {
       } catch (error) {
         console.error(`Failed to process reminder ${reminder.$id}:`, error)
       }
-    }
+    });
+    
+    // Wait for all reminders to be processed
+    await Promise.all(processPromises);
+    
+    return dueReminders.length;
   } catch (error) {
     console.error("Error processing due reminders:", error)
+    return 0;
   }
 }
 
@@ -70,27 +62,45 @@ const processDueReminders = async (userId) => {
 export default function ReminderService() {
   const { currentUser } = useAuth()
   const [lastCheck, setLastCheck] = useState(null)
+  const [isChecking, setIsChecking] = useState(false)
+  const checkInterval = useRef(null)
   
   // Check for due reminders every minute
   useEffect(() => {
+    // Only run if user is logged in
     if (!currentUser) return
     
-    // Process reminders immediately on mount
-    const checkReminders = async () => {
-      await processDueReminders(currentUser.$id)
-      setLastCheck(new Date())
+    // Cleanup any existing interval first
+    if (checkInterval.current) {
+      clearInterval(checkInterval.current)
     }
     
+    // Process reminders immediately on mount, but only if not already checking
+    const checkReminders = async () => {
+      // Prevent concurrent checks
+      if (isChecking) return
+      
+      setIsChecking(true)
+      try {
+        await processDueReminders(currentUser.$id)
+        setLastCheck(new Date())
+      } finally {
+        setIsChecking(false)
+      }
+    }
+    
+    // Run initial check
     checkReminders()
     
     // Set up interval to check for due reminders
-    const intervalId = setInterval(async () => {
-      await processDueReminders(currentUser.$id)
-      setLastCheck(new Date())
-    }, 60000) // Check every minute
+    checkInterval.current = setInterval(checkReminders, 60000) // Check every minute
     
-    return () => clearInterval(intervalId)
-  }, [currentUser])
+    return () => {
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current)
+      }
+    }
+  }, [currentUser, isChecking])
   
   // This is a background service, so it doesn't render anything
   return null

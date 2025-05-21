@@ -92,10 +92,6 @@ export default function TaskInput({ onAddTask }) {
       // Store the parsed result
       setParsedTask(result)
       
-      // Log the formatted XML output to console for debugging
-      console.log("Parsed task as XML:");
-      console.log(formatTaskAsXML(result));
-      
       // Check if we need additional information
       if (!result.dueDate && !result.urgency) {
         // If both are missing, first ask for due date
@@ -150,16 +146,7 @@ export default function TaskInput({ onAddTask }) {
     setLoading(true)
     
     try {
-      // Display the current time information to the user for context
-      const now = new Date();
-      console.log(`Current time for parsing: ${now.toLocaleString()}`);
-      
       const result = await parseTaskInput(input)
-      
-      // Log for debugging
-      console.log('Parsed task:', result)
-      console.log('XML format:')
-      console.log(formatTaskAsXML(result))
       
       // Ensure all dates are in the future
       if (result.dueDate) {
@@ -168,19 +155,15 @@ export default function TaskInput({ onAddTask }) {
         
         // If the parsed time is in the past but on the same day, assume it's for tomorrow
         if (dueDate < now) {
-          console.log("Adjusting time: parsed time is in the past");
-          
           // If it's the same day but earlier time
           if (dueDate.toDateString() === now.toDateString()) {
             dueDate.setDate(dueDate.getDate() + 1);
-            console.log(`Adjusted to tomorrow: ${dueDate.toLocaleString()}`);
           } else {
             // For past dates (like "Monday" when today is Wednesday)
             // Keep incrementing by 1 day until in the future
             while (dueDate < now) {
               dueDate.setDate(dueDate.getDate() + 1);
             }
-            console.log(`Adjusted to future date: ${dueDate.toLocaleString()}`);
           }
           result.dueDate = dueDate.toISOString();
         }
@@ -192,7 +175,6 @@ export default function TaskInput({ onAddTask }) {
            input.toLowerCase().includes("deadline") || 
            input.toLowerCase().includes("urgent"))) {
         result.urgency = 4.5;
-        console.log("Set urgency to 4.5 based on keywords");
         
         // Remove urgency from stillNeeded if it exists
         if (result.stillNeeded) {
@@ -258,19 +240,12 @@ export default function TaskInput({ onAddTask }) {
                     hour12: true
                   });
                   
-                  console.log(`Selected date: ${formattedDate}`);
-                  
                   // Generate a natural language prompt that would result in this date
                   const naturalLanguagePrompt = `${parsedTask.title} on ${formattedDate}`;
-                  
-                  // Log the natural language prompt for debugging
-                  console.log(`Natural language prompt for parsing: ${naturalLanguagePrompt}`);
                   
                   // Try to parse with the natural language parser to get consistent results
                   parseTaskInput(naturalLanguagePrompt)
                     .then(result => {
-                      console.log("Natural language parsed result:", result);
-                      
                       // Use the original title from the parsed task, but the date from the natural language processing
                       const updatedTask = {
                         ...parsedTask,
@@ -282,7 +257,6 @@ export default function TaskInput({ onAddTask }) {
                       const now = new Date();
                       
                       if (dueDate < now) {
-                        console.warn("Due date is in the past, adjusting");
                         // Simple adjustment - if it's the same day but earlier time, set to tomorrow same time
                         if (dueDate.toDateString() === now.toDateString()) {
                           dueDate.setDate(dueDate.getDate() + 1);

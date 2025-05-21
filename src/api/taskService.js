@@ -1,9 +1,58 @@
 import { databases, databaseId, tasksCollectionId, ID, Query } from './appwrite';
 
+// Add caching for tasks to prevent duplicate API calls
+const taskCache = {
+  // Cache by workspace and user: { `${userId}-${workspaceId}`: { data: [], timestamp: Date.now() } }
+  byWorkspace: new Map(),
+  // Cache expiry in milliseconds (30 seconds)
+  CACHE_EXPIRY: 30000
+};
+
+// Cache management functions
+const cacheHelpers = {
+  getCacheKey: (userId, workspaceId) => {
+    return `${userId}-${workspaceId || 'default'}`;
+  },
+  
+  isCacheValid: (timestamp) => {
+    return timestamp && (Date.now() - timestamp < taskCache.CACHE_EXPIRY);
+  },
+  
+  clearCache: (userId, workspaceId) => {
+    if (userId) {
+      if (workspaceId) {
+        // Clear specific workspace cache
+        taskCache.byWorkspace.delete(cacheHelpers.getCacheKey(userId, workspaceId));
+      } else {
+        // Clear all caches for this user
+        const keysToDelete = [];
+        taskCache.byWorkspace.forEach((_, key) => {
+          if (key.startsWith(`${userId}-`)) {
+            keysToDelete.push(key);
+          }
+        });
+        keysToDelete.forEach(key => taskCache.byWorkspace.delete(key));
+      }
+    }
+  },
+  
+  clearAllCaches: () => {
+    taskCache.byWorkspace.clear();
+  }
+};
+
 export const taskService = {
   // Get all tasks for a user and workspace
   async getTasks(userId, workspaceId) {
     try {
+      // Check cache first
+      const cacheKey = cacheHelpers.getCacheKey(userId, workspaceId);
+      const cachedData = taskCache.byWorkspace.get(cacheKey);
+      
+      if (cachedData && cacheHelpers.isCacheValid(cachedData.timestamp)) {
+        return cachedData.data;
+      }
+      
       const queries = [
         Query.equal('userId', userId)
       ];
@@ -17,6 +66,12 @@ export const taskService = {
         tasksCollectionId,
         queries
       );
+      
+      // Update cache
+      taskCache.byWorkspace.set(cacheKey, {
+        data: response.documents,
+        timestamp: Date.now()
+      });
       
       return response.documents;
     } catch (error) {
@@ -33,7 +88,7 @@ export const taskService = {
       const docId = crypto.randomUUID();
       
       // Only include fields that match the schema
-      return await databases.createDocument(
+      const newTask = await databases.createDocument(
         databaseId,
         tasksCollectionId,
         docId,
@@ -50,6 +105,11 @@ export const taskService = {
           comments: [] // Optional field
         }
       );
+      
+      // Clear related cache
+      cacheHelpers.clearCache(userId, workspaceId);
+      
+      return newTask;
     } catch (error) {
       console.error('Error creating task:', error);
       throw error;
@@ -59,6 +119,14 @@ export const taskService = {
   // Update an existing task
   async updateTask(id, updates) {
     try {
+      // Get the current task first to get userId and workspaceId
+      let task;
+      try {
+        task = await databases.getDocument(databaseId, tasksCollectionId, id);
+      } catch (e) {
+        // If we can't get the task, we'll just clear all caches later
+      }
+      
       // Filter out any fields that don't match the schema
       const validUpdates = {};
       
@@ -71,12 +139,21 @@ export const taskService = {
       // Always update the updatedAt field
       validUpdates.updatedAt = new Date().toISOString();
       
-      return await databases.updateDocument(
+      const updatedTask = await databases.updateDocument(
         databaseId,
         tasksCollectionId,
         id,
         validUpdates
       );
+      
+      // Clear cache
+      if (task) {
+        cacheHelpers.clearCache(task.userId, task.workspaceId);
+      } else {
+        cacheHelpers.clearAllCaches();
+      }
+      
+      return updatedTask;
     } catch (error) {
       console.error('Error updating task:', error);
       throw error;
@@ -86,11 +163,28 @@ export const taskService = {
   // Delete a task
   async deleteTask(id) {
     try {
-      return await databases.deleteDocument(
+      // Get the task first to know which cache to clear
+      let task;
+      try {
+        task = await databases.getDocument(databaseId, tasksCollectionId, id);
+      } catch (e) {
+        // If we can't get the task, we'll just clear all caches later
+      }
+      
+      const result = await databases.deleteDocument(
         databaseId,
         tasksCollectionId,
         id
       );
+      
+      // Clear cache
+      if (task) {
+        cacheHelpers.clearCache(task.userId, task.workspaceId);
+      } else {
+        cacheHelpers.clearAllCaches();
+      }
+      
+      return result;
     } catch (error) {
       console.error('Error deleting task:', error);
       throw error;
@@ -114,9 +208,13 @@ export const taskService = {
       const updatedComments = [...(task.comments || []), commentString];
       
       // Update the task with the new comments array
-      return await this.updateTask(taskId, { 
+      const updatedTask = await this.updateTask(taskId, { 
         comments: updatedComments 
       });
+      
+      // Cache already cleared in updateTask
+      
+      return updatedTask;
     } catch (error) {
       console.error('Error adding comment to task:', error);
       throw error;
@@ -126,13 +224,22 @@ export const taskService = {
   // Toggle task completion status
   async toggleTaskCompletion(taskId, currentStatus) {
     try {
-      return await this.updateTask(taskId, { 
+      const updatedTask = await this.updateTask(taskId, { 
         completed: !currentStatus 
       });
+      
+      // Cache already cleared in updateTask
+      
+      return updatedTask;
     } catch (error) {
       console.error('Error toggling task completion:', error);
       throw error;
     }
+  },
+  
+  // Clear all caches (useful when switching users or for debugging)
+  clearCaches() {
+    cacheHelpers.clearAllCaches();
   }
 };
 

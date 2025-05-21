@@ -21,19 +21,21 @@ export default function useTasks() {
     let isMounted = true;
     
     const fetchTasks = async () => {
+      // Set loading only once at the beginning
+      if (isMounted) setLoading(true);
+      
       if (!currentUser || !activeWorkspaceId) {
-        setTasks([])
-        setLoading(false)
+        if (isMounted) {
+          setTasks([])
+          setLoading(false)
+        }
         return
       }
       
       try {
-        setLoading(true)
-        console.log('Fetching tasks for workspace:', activeWorkspaceId);
         const tasksData = await taskService.getTasks(currentUser.$id, activeWorkspaceId)
         
         if (isMounted) {
-          console.log('Fetched tasks:', tasksData);
           setTasks(tasksData)
           setLoading(false)
         }
