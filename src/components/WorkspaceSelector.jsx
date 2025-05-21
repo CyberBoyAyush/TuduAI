@@ -82,9 +82,11 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   
   const handleDelete = (id) => {
     try {
-      // Never allow deleting the default workspace
-      if (id === 'default') {
-        setDeletingWorkspaceId(null);
+      // Check if it's the default workspace
+      const workspace = workspaces.find(w => w.id === id);
+      if (workspace?.isDefault) {
+        // Show error message
+        alert("Cannot delete the default workspace");
         return;
       }
       
@@ -98,11 +100,22 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   const confirmDelete = () => {
     try {
       if (deletingWorkspaceId) {
+        // Double-check it's not the default workspace
+        const workspaceToDelete = workspaces.find(w => w.id === deletingWorkspaceId);
+        if (workspaceToDelete?.isDefault) {
+          alert("Cannot delete the default workspace");
+          setDeletingWorkspaceId(null);
+          return;
+        }
+        
         deleteWorkspace(deletingWorkspaceId);
         setDeletingWorkspaceId(null);
       }
     } catch (error) {
       console.error(error.message);
+      // Show error message to user
+      alert("Error deleting workspace: " + error.message);
+      setDeletingWorkspaceId(null);
     }
   }
   
@@ -184,8 +197,8 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                           ⌥{index + 1}
                         </span>
                         
-                        {/* Show delete button if not the default workspace */}
-                        {workspace.id !== 'default' && (
+                        {/* Show delete button only if not the default workspace */}
+                        {!workspace.isDefault ? (
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -196,6 +209,10 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                           >
                             <TrashIcon className="w-3 h-3" />
                           </button>
+                        ) : (
+                          <div className="ml-1.5 p-1 text-gray-300 dark:text-gray-600 cursor-not-allowed" title="Cannot delete default workspace">
+                            <TrashIcon className="w-3 h-3" />
+                          </div>
                         )}
                       </div>
                     </div>
