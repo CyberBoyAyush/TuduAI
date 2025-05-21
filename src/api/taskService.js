@@ -191,6 +191,44 @@ export const taskService = {
     }
   },
 
+  // Delete all tasks for a specific workspace
+  async deleteTasksByWorkspaceId(workspaceId) {
+    try {
+      // First, get all tasks for this workspace
+      // We can't know the user ID here, so we'll search only by workspace ID
+      const response = await databases.listDocuments(
+        databaseId,
+        tasksCollectionId,
+        [Query.equal('workspaceId', workspaceId)]
+      );
+      
+      // If no tasks found, return early
+      if (response.documents.length === 0) {
+        return { success: true, deletedCount: 0 };
+      }
+      
+      // Delete all tasks in parallel for better performance
+      const deletePromises = response.documents.map(task => 
+        this.deleteTask(task.$id)
+      );
+      
+      await Promise.all(deletePromises);
+      
+      // Get user IDs from tasks to clear caches
+      const uniqueUserIds = [...new Set(response.documents.map(task => task.userId))];
+      
+      // Clear caches for all affected users
+      uniqueUserIds.forEach(userId => {
+        cacheHelpers.clearCache(userId, workspaceId);
+      });
+      
+      return { success: true, deletedCount: response.documents.length };
+    } catch (error) {
+      console.error('Error deleting tasks by workspace ID:', error);
+      throw error;
+    }
+  },
+
   // Add a comment to a task
   async addComment(taskId, comment) {
     try {

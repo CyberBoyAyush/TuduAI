@@ -1,4 +1,5 @@
 import { databases, databaseId, workspacesCollectionId, ID, Query } from './appwrite';
+import taskService from './taskService';
 
 export const workspaceService = {
   // Get all workspaces for a user
@@ -92,6 +93,10 @@ export const workspaceService = {
   // Delete a workspace
   async deleteWorkspace(id) {
     try {
+      // First, delete all tasks associated with this workspace
+      await taskService.deleteTasksByWorkspaceId(id);
+      
+      // Then delete the workspace itself
       return await databases.deleteDocument(
         databaseId,
         workspacesCollectionId,
