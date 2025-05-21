@@ -2,7 +2,7 @@
  * File: TaskCard.jsx
  * Purpose: Displays a task with its urgency, due time, and comment section
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate, getUrgencyColor, getDueDateColor } from '../utils/date'
 import CommentSection from './CommentSection'
@@ -34,9 +34,31 @@ export default function TaskCard({
   const [suggestions, setSuggestions] = useState([])
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   
+  // Parse comments (convert from strings to objects if needed)
+  const parsedComments = useMemo(() => {
+    if (!task.comments || !Array.isArray(task.comments)) return [];
+    
+    return task.comments.map(comment => {
+      if (typeof comment === 'string') {
+        try {
+          return JSON.parse(comment);
+        } catch (e) {
+          console.error('Error parsing comment:', e);
+          return comment;
+        }
+      }
+      return comment;
+    });
+  }, [task.comments]);
+  
+  // Get comment count (for display)
+  const commentCount = useMemo(() => {
+    return parsedComments.length;
+  }, [parsedComments]);
+  
   const handleToggleComplete = (e) => {
     e.stopPropagation()
-    onUpdate(task.id, { completed: !task.completed })
+    onUpdate(task.$id, { completed: !task.completed })
   }
   
   const handleDelete = (e) => {
@@ -46,7 +68,7 @@ export default function TaskCard({
   
   const confirmDelete = (e) => {
     if (e) e.stopPropagation()
-    onDelete(task.id)
+    onDelete(task.$id)
     setIsDeleteConfirmOpen(false)
   }
   
@@ -91,7 +113,7 @@ export default function TaskCard({
   
   const handleSetUrgency = (urgency, e) => {
     e.stopPropagation()
-    onUpdate(task.id, { urgency })
+    onUpdate(task.$id, { urgency })
     setIsUrgencyModalOpen(false)
   }
   
@@ -111,7 +133,7 @@ export default function TaskCard({
         const parsedInput = await parseTaskInput(`Reschedule to ${rescheduleInput.trim()}`)
         
         if (parsedInput.dueDate) {
-          onUpdate(task.id, { dueDate: new Date(parsedInput.dueDate) })
+          onUpdate(task.$id, { dueDate: new Date(parsedInput.dueDate) })
           setIsRescheduling(false)
           setRescheduleInput('')
         } else if (parsedInput.suggestions && parsedInput.suggestions.length > 0) {
@@ -126,7 +148,7 @@ export default function TaskCard({
         // Fallback: try direct date parsing if OpenAI fails
         const newDate = new Date(rescheduleInput.trim())
         if (!isNaN(newDate.getTime())) {
-          onUpdate(task.id, { dueDate: newDate })
+          onUpdate(task.$id, { dueDate: newDate })
           setIsRescheduling(false)
           setRescheduleInput('')
         }
@@ -138,7 +160,7 @@ export default function TaskCard({
   
   const handleSelectSuggestion = (suggestion) => {
     if (suggestion.value) {
-      onUpdate(task.id, { dueDate: new Date(suggestion.value) })
+      onUpdate(task.$id, { dueDate: new Date(suggestion.value) })
       setIsRescheduling(false)
       setRescheduleInput('')
     }
@@ -261,10 +283,10 @@ export default function TaskCard({
               </div>
               
               {/* Comment count indicator */}
-              {task.comments && task.comments.length > 0 && (
+              {commentCount > 0 && (
                 <div className="flex items-center mt-2 text-xs text-gray-500 dark:text-neutral-400">
                   <ChatBubbleBottomCenterTextIcon className="w-3 h-3 mr-1" />
-                  {task.comments.length} {task.comments.length === 1 ? 'comment' : 'comments'}
+                  {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
                 </div>
               )}
             </div>
@@ -525,9 +547,9 @@ export default function TaskCard({
             className="border-t border-gray-200 dark:border-neutral-700 overflow-hidden"
           >
             <CommentSection
-              taskId={task.id}
+              taskId={task.$id}
               taskTitle={task.title}
-              comments={task.comments || []}
+              comments={parsedComments}
               onAddComment={onAddComment}
               onDeleteComment={onDeleteComment}
             />

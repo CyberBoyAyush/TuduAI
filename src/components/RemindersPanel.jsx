@@ -34,32 +34,45 @@ export default function RemindersPanel({ isOpen, onClose }) {
     setLoading(true)
     
     // Get reminders for the current user in the active workspace
-    const userReminders = getUserReminders(currentUser.id, activeWorkspaceId)
+    const fetchReminders = async () => {
+      try {
+        const userReminders = await getUserReminders(currentUser.$id, activeWorkspaceId)
+        
+        // Sort reminders by due date (closest first)
+        const sortedReminders = userReminders.sort((a, b) => {
+          if (!a.dueDate) return 1
+          if (!b.dueDate) return -1
+          return new Date(a.dueDate) - new Date(b.dueDate)
+        })
+        
+        setReminders(sortedReminders)
+      } catch (error) {
+        console.error('Error fetching reminders:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
     
-    // Sort reminders by due date (closest first)
-    const sortedReminders = userReminders.sort((a, b) => {
-      if (!a.dueDate) return 1
-      if (!b.dueDate) return -1
-      return new Date(a.dueDate) - new Date(b.dueDate)
-    })
-    
-    setReminders(sortedReminders)
-    setLoading(false)
+    fetchReminders()
   }, [currentUser, activeWorkspaceId, isOpen])
   
   // Handle reminder deletion
-  const handleDelete = (reminderId) => {
-    deleteReminder(reminderId)
-    
-    // Update local state
-    setReminders(prevReminders => 
-      prevReminders.filter(reminder => reminder.id !== reminderId)
-    )
+  const handleDelete = async (reminderId) => {
+    try {
+      await deleteReminder(reminderId)
+      
+      // Update local state
+      setReminders(prevReminders => 
+        prevReminders.filter(reminder => reminder.$id !== reminderId)
+      )
+    } catch (error) {
+      console.error('Error deleting reminder:', error)
+    }
   }
   
   // Get status badge for a reminder
   const getReminderStatusBadge = (reminder) => {
-    if (reminder.status === 'sent') {
+    if (reminder.status === 'done') {
       return (
         <span className="inline-flex items-center text-xs font-medium text-green-700 dark:text-green-400">
           <CheckCircleIcon className="w-3 h-3 mr-1" />
@@ -93,6 +106,12 @@ export default function RemindersPanel({ isOpen, onClose }) {
       </span>
     )
   }
+  
+  // Map display filter to actual database status
+  const getStatusFilter = (displayFilter) => {
+    if (displayFilter === 'sent') return 'done';
+    return displayFilter;
+  };
   
   // If panel is closed, don't render anything
   if (!isOpen) return null
@@ -174,43 +193,51 @@ export default function RemindersPanel({ isOpen, onClose }) {
                   Use <code className="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">!remindme</code> or <code className="bg-gray-100 dark:bg-neutral-700 px-1 py-0.5 rounded">!rmd</code> in a comment to set a reminder
                 </p>
               </div>
-            ) : (              <div className="space-y-3">
+            ) : (
+              <div className="space-y-3">
                 {reminders
-                  .filter(reminder => filterStatus === 'all' || reminder.status === filterStatus)
+                  .filter(reminder => {
+                    if (filterStatus === 'all') return true;
+                    if (filterStatus === 'sent') return reminder.status === 'done';
+                    return reminder.status === filterStatus;
+                  })
                   .map(reminder => (
                     <motion.div
-                    key={reminder.id}
-                    className="bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700 rounded-lg p-3"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium text-gray-800 dark:text-gray-200">
-                        {reminder.text}
-                      </span>
-                      <button
-                        onClick={() => handleDelete(reminder.id)}
-                        className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs">
-                      {getReminderStatusBadge(reminder)}
+                      key={reminder.$id}
+                      className="bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-700 rounded-lg p-3"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      <div className="flex justify-between mb-1">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">
+                          {reminder.text}
+                        </span>
+                        <button
+                          onClick={() => handleDelete(reminder.$id)}
+                          className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                       
-                      <span className="text-gray-500 dark:text-gray-400">
-                        Task: {reminder.taskTitle || "Unknown task"}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex justify-between items-center text-xs">
+                        {getReminderStatusBadge(reminder)}
+                        
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Task: {reminder.taskTitle || "Unknown task"}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
                 
                 {/* Show message when filtered results are empty */}
                 {reminders.length > 0 && 
                  filterStatus !== 'all' && 
-                 !reminders.some(r => r.status === filterStatus) && (
+                 !reminders.some(r => {
+                   if (filterStatus === 'sent') return r.status === 'done';
+                   return r.status === filterStatus;
+                 }) && (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <ClockIcon className="w-8 h-8 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
                     <p>No {filterStatus} reminders found</p>

@@ -5,10 +5,10 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { v4 as uuidv4 } from 'uuid'
+import taskService from '../api/taskService'
 
 /**
- * Custom hook for managing tasks with localStorage persistence
+ * Custom hook for managing tasks with Appwrite persistence
  */
 export default function useTasks() {
   const [tasks, setTasks] = useState([])
@@ -16,52 +16,68 @@ export default function useTasks() {
   const { currentUser } = useAuth()
   const { activeWorkspaceId } = useWorkspace()
   
-  // Load tasks from localStorage when user or workspace changes
+  // Load tasks from Appwrite when user or workspace changes
   useEffect(() => {
-    if (!currentUser) {
-      setTasks([])
-      setLoading(false)
-      return
+    let isMounted = true;
+    
+    const fetchTasks = async () => {
+      // Set loading only once at the beginning
+      if (isMounted) setLoading(true);
+      
+      if (!currentUser || !activeWorkspaceId) {
+        if (isMounted) {
+          setTasks([])
+          setLoading(false)
+        }
+        return
+      }
+      
+      try {
+        const tasksData = await taskService.getTasks(currentUser.$id, activeWorkspaceId)
+        
+        if (isMounted) {
+          setTasks(tasksData)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error)
+        if (isMounted) {
+          setTasks([])
+          setLoading(false)
+        }
+      }
     }
     
-    const userKey = `tasks_${currentUser.email}_${activeWorkspaceId}`
-    const savedTasks = localStorage.getItem(userKey)
+    fetchTasks()
     
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks))
-    } else {
-      setTasks([])
+    return () => {
+      isMounted = false;
     }
-    
-    setLoading(false)
   }, [currentUser, activeWorkspaceId])
-  
-  // Save tasks to localStorage when they change
-  useEffect(() => {
-    if (!currentUser || loading) return
-    
-    const userKey = `tasks_${currentUser.email}_${activeWorkspaceId}`
-    localStorage.setItem(userKey, JSON.stringify(tasks))
-  }, [tasks, currentUser, activeWorkspaceId, loading])
   
   /**
    * Add a new task
    * @param {Object} taskData - Task data (title, dueDate, urgency)
    * @returns {string} New task ID
    */
-  const addTask = (taskData) => {
-    const newTask = {
-      id: uuidv4(),
-      title: taskData.title,
-      dueDate: taskData.dueDate,
-      urgency: taskData.urgency || 3, // Default urgency is medium (3)
-      completed: false,
-      comments: [],
-      createdAt: new Date().toISOString()
-    }
+  const addTask = async (taskData) => {
+    if (!currentUser || !activeWorkspaceId) return null;
     
-    setTasks(prevTasks => [...prevTasks, newTask])
-    return newTask.id
+    try {
+      const newTask = await taskService.createTask(
+        taskData.title,
+        taskData.dueDate,
+        taskData.urgency || 3, // Default urgency is medium (3)
+        activeWorkspaceId,
+        currentUser.$id
+      )
+      
+      setTasks(prevTasks => [...prevTasks, newTask])
+      return newTask.$id
+    } catch (error) {
+      console.error('Error adding task:', error)
+      return null
+    }
   }
   
   /**
@@ -69,20 +85,33 @@ export default function useTasks() {
    * @param {string} id - Task ID
    * @param {Object} updates - Fields to update
    */
-  const updateTask = (id, updates) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === id ? { ...task, ...updates } : task
+  const updateTask = async (id, updates) => {
+    try {
+      const updatedTask = await taskService.updateTask(id, updates)
+      
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.$id === id ? updatedTask : task
+        )
       )
-    )
+      
+      return updatedTask
+    } catch (error) {
+      console.error('Error updating task:', error)
+    }
   }
   
   /**
    * Delete a task
    * @param {string} id - Task ID
    */
-  const deleteTask = (id) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== id))
+  const deleteTask = async (id) => {
+    try {
+      await taskService.deleteTask(id)
+      setTasks(prevTasks => prevTasks.filter(task => task.$id !== id))
+    } catch (error) {
+      console.error('Error deleting task:', error)
+    }
   }
   
   /**
@@ -90,25 +119,27 @@ export default function useTasks() {
    * @param {string} taskId - Task ID
    * @param {string} text - Comment text
    */
-  const addComment = (taskId, text) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => {
-        if (task.id === taskId) {
-          const newComment = {
-            id: uuidv4(),
-            text,
-            user: currentUser.name,
-            time: new Date().toISOString()
-          }
-          
-          return {
-            ...task,
-            comments: [...task.comments, newComment]
-          }
-        }
-        return task
-      })
-    )
+  const addComment = async (taskId, text) => {
+    try {
+      const newComment = {
+        id: crypto.randomUUID(),
+        text,
+        user: currentUser.name,
+        time: new Date().toISOString()
+      }
+      
+      const updatedTask = await taskService.addComment(taskId, newComment)
+      
+      setTasks(prevTasks => 
+        prevTasks.map(task => 
+          task.$id === taskId ? updatedTask : task
+        )
+      )
+      
+      return updatedTask
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
   }
   
   /**
@@ -116,30 +147,67 @@ export default function useTasks() {
    * @param {string} taskId - Task ID
    * @param {string} commentId - Comment ID
    */
-  const deleteComment = (taskId, commentId) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            comments: task.comments.filter(c => c.id !== commentId)
+  const deleteComment = async (taskId, commentId) => {
+    try {
+      // Get the current task
+      const task = tasks.find(t => t.$id === taskId)
+      if (!task) return
+      
+      // Parse any stringified comments
+      const parsedComments = (task.comments || []).map(comment => {
+        if (typeof comment === 'string') {
+          try {
+            return JSON.parse(comment)
+          } catch (e) {
+            return comment
           }
         }
-        return task
+        return comment
       })
-    )
+      
+      // Filter out the comment to delete
+      const filteredComments = parsedComments.filter(c => c.id !== commentId)
+      
+      // Stringify the comments again for storage
+      const stringifiedComments = filteredComments.map(comment => {
+        if (typeof comment === 'object') {
+          return JSON.stringify(comment)
+        }
+        return comment
+      })
+      
+      // Update the task with the new comments array
+      const updatedTask = await taskService.updateTask(taskId, { comments: stringifiedComments })
+      
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.$id === taskId ? updatedTask : t
+        )
+      )
+    } catch (error) {
+      console.error('Error deleting comment:', error)
+    }
   }
   
   /**
    * Toggle task completion status
    * @param {string} id - Task ID
    */
-  const toggleTaskCompletion = (id) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === id ? { ...task, completed: !task.completed } : task
+  const toggleTaskCompletion = async (id) => {
+    try {
+      const task = tasks.find(t => t.$id === id)
+      if (!task) return
+      
+      const updatedTask = await taskService.toggleTaskCompletion(id, task.completed)
+      
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.$id === id ? updatedTask : t
+        )
       )
-    )
+    } catch (error) {
+      console.error('Error toggling task completion:', error)
+    }
   }
   
   return {

@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useWorkspace } from '../context/WorkspaceContext'
 import useTasks from '../hooks/useTasks'
 import TaskInput from '../components/TaskInput'
 import TaskList from '../components/TaskList'
@@ -13,6 +14,7 @@ import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export default function Todo({ showCompletedTasks }) {
   const { currentUser, loading: authLoading } = useAuth()
+  const { resetWorkspaces } = useWorkspace()
   const { 
     tasks, 
     loading: tasksLoading,
@@ -25,6 +27,7 @@ export default function Todo({ showCompletedTasks }) {
   } = useTasks()
   
   const [isAddingTask, setIsAddingTask] = useState(false)
+  const [addingTaskStatus, setAddingTaskStatus] = useState(null)
   const navigate = useNavigate()
   
   // Redirect to login if not authenticated
@@ -34,9 +37,27 @@ export default function Todo({ showCompletedTasks }) {
     }
   }, [currentUser, authLoading, navigate])
   
-  const handleAddTask = (taskData) => {
-    const newTaskId = addTask(taskData)
-    return newTaskId
+  const handleAddTask = async (taskData) => {
+    setIsAddingTask(true);
+    setAddingTaskStatus('Adding task...');
+    
+    try {
+      const newTaskId = await addTask(taskData);
+      setAddingTaskStatus('Task added successfully!');
+      setTimeout(() => {
+        setAddingTaskStatus(null);
+      }, 2000);
+      return newTaskId;
+    } catch (error) {
+      console.error("Error adding task:", error);
+      setAddingTaskStatus('Failed to add task');
+      setTimeout(() => {
+        setAddingTaskStatus(null);
+      }, 2000);
+      return null;
+    } finally {
+      setIsAddingTask(false);
+    }
   }
   
   if (authLoading || tasksLoading) {
@@ -60,9 +81,12 @@ export default function Todo({ showCompletedTasks }) {
       >
         {/* Show task input at the top, always visible like in the screenshot */}
         <div className="mt-4">
-          <TaskInput onAddTask={(taskData) => {
-            handleAddTask(taskData)
-          }} />
+          <TaskInput onAddTask={handleAddTask} />
+          {addingTaskStatus && (
+            <p className={`text-sm mt-2 ${addingTaskStatus.includes('Failed') ? 'text-red-500' : 'text-green-500'}`}>
+              {addingTaskStatus}
+            </p>
+          )}
         </div>
       </motion.div>
       

@@ -60,6 +60,8 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   // Get the current active workspace
   const activeWorkspace = getActiveWorkspace()
   
+
+  
   return (
     <nav className="border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 sticky top-0 z-40 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -102,6 +104,8 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
         
         {/* Right side controls */}
         <div className="flex items-center space-x-2">
+
+          
           {/* Show completed tasks toggle - only show on todo page */}
           {currentUser && location.pathname === '/todo' && (
             <motion.button

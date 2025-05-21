@@ -19,6 +19,7 @@ TuduAI is an AI-powered task management application built with React.js and Tail
 - TailwindCSS v4.1
 - Framer Motion for animations
 - OpenAI GPT-4.1 Mini integration
+- Appwrite for backend services and authentication
 - LocalStorage for data persistence
 
 ## Getting Started
@@ -42,19 +43,71 @@ npm install
 pnpm install
 ```
 
-3. Create a `.env.local` file in the root and add your OpenAI API key
+3. Create a `.env` file in the root and add your Appwrite configuration:
 ```
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+VITE_APPWRITE_PROJECT_ID=your-project-id
+VITE_APPWRITE_DATABASE_ID=your-database-id
+VITE_APPWRITE_WORKSPACES_COLLECTION_ID=your-workspaces-collection-id
+VITE_APPWRITE_TASKS_COLLECTION_ID=your-tasks-collection-id
+VITE_APPWRITE_REMINDERS_COLLECTION_ID=your-reminders-collection-id
+# No longer needed in client code - set this as a Vercel Secret
+# VITE_OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-4. Start the development server
+4. For deployment, add your OpenAI API key as a Vercel Secret:
+```bash
+vercel secrets add openai_api_key your_openai_api_key_here
+```
+
+5. Set up Appwrite:
+   - Create an Appwrite account at [https://appwrite.io/](https://appwrite.io/)
+   - Create a new project and database
+   - Create the following collections with these schemas:
+
+```
+• workspaces:
+  - id         (String, 36, Required)
+  - name       (String, 50, Required)
+  - icon       (String, 4, Required)
+  - color      (String, 20, Required)
+  - userId     (String, 36, Required)
+  - isDefault  (Boolean, Required, default=false)
+
+• tasks:
+  - id           (String, 36, Required)
+  - title        (String,100, Required)
+  - dueDate      (String ISO, Required)
+  - urgency      (Double, Required)
+  - completed    (Boolean, Required, default=false)
+  - createdAt    (String ISO, Required)
+  - updatedAt    (String ISO, Required)
+  - workspaceId  (String,36, Required)
+  - userId       (String,36, Required)
+  - comments     (String[], Optional)
+
+• reminders:
+  - id           (String,36, Required)
+  - text         (String,200, Required)
+  - dueDate      (String ISO, Required)
+  - taskId       (String,36, Required)
+  - taskTitle    (String,100, Required)
+  - workspaceId  (String,36, Required)
+  - userId       (String,36, Required)
+  - userEmail    (Email, Required)
+  - userName     (String,100, Required)
+  - createdAt    (String ISO, Required)
+  - status       (String,10, Required, enum: "pending","done")
+```
+
+5. Start the development server
 ```bash
 npm run dev
 # or
 pnpm dev
 ```
 
-5. Open http://localhost:5173 in your browser
+6. Open http://localhost:5173 in your browser
 
 ## Usage
 

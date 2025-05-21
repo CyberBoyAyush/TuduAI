@@ -3,7 +3,16 @@
  * Purpose: Utility functions for managing reminders
  */
 import { parseTaskInput } from '../lib/openai'
-import { v4 as uuidv4 } from 'uuid'
+import reminderService from '../api/reminderService'
+
+// Local caching for reminders data
+const reminderCache = {
+  dueReminders: {
+    data: null,
+    timestamp: 0
+  },
+  CACHE_EXPIRY: 20000 // 20 seconds - shorter than the service level cache
+};
 
 /**
  * Parse a reminder command and extract the reminder text and time
@@ -49,138 +58,160 @@ export const parseReminder = async (text) => {
 }
 
 /**
- * Save a reminder to localStorage
+ * Save a reminder using Appwrite reminderService
  * @param {Object} reminderData - The reminder data to save
  * @param {Object} contextData - Context data (user, task, workspace)
- * @returns {string} - The ID of the saved reminder
+ * @returns {Promise<string>} - The ID of the saved reminder
  */
-export const saveReminder = (reminderData, contextData) => {
+export const saveReminder = async (reminderData, contextData) => {
   const { currentUser, taskId, workspaceId } = contextData
   
   if (!currentUser || !taskId) {
     throw new Error('Missing required context data')
   }
   
-  // Generate a unique ID for the reminder
-  const reminderId = uuidv4()
-  
-  // Create the reminder object
-  const reminder = {
-    id: reminderId,
-    text: reminderData.text,
-    dueDate: reminderData.dueDate,
-    taskId,
-    taskTitle: contextData.taskTitle || 'Unknown task',
-    workspaceId: workspaceId || 'default',
-    userId: currentUser.id,
-    userEmail: currentUser.email,
-    userName: currentUser.name,
-    createdAt: new Date().toISOString(),
-    status: 'pending'
+  try {
+    // Create the reminder via Appwrite service
+    const newReminder = await reminderService.createReminder(
+      reminderData.text,
+      reminderData.dueDate,
+      taskId,
+      contextData.taskTitle || 'Unknown task',
+      workspaceId || 'default',
+      currentUser.$id,
+      currentUser.email,
+      currentUser.name
+    )
+    
+    // Invalidate cache when creating a new reminder
+    reminderCache.dueReminders.data = null;
+    
+    return newReminder.$id
+  } catch (error) {
+    console.error('Error saving reminder:', error)
+    throw error
   }
-  
-  // Get existing reminders
-  const existingReminders = JSON.parse(localStorage.getItem('reminders') || '[]')
-  
-  // Add the new reminder
-  existingReminders.push(reminder)
-  
-  // Save back to localStorage
-  localStorage.setItem('reminders', JSON.stringify(existingReminders))
-  
-  return reminderId
 }
 
 /**
  * Get all reminders for a user
  * @param {string} userId - The user ID to get reminders for
  * @param {string} workspaceId - Optional workspace ID filter
- * @returns {Array} - Array of reminder objects
+ * @returns {Promise<Array>} - Array of reminder objects
  */
-export const getUserReminders = (userId, workspaceId) => {
+export const getUserReminders = async (userId, workspaceId) => {
   if (!userId) return []
   
-  const reminders = JSON.parse(localStorage.getItem('reminders') || '[]')
-  
-  return reminders.filter(reminder => {
-    // Filter by user ID
-    const userMatch = reminder.userId === userId
+  try {
+    // Use the service's caching system
+    const reminders = await reminderService.getReminders(userId)
     
-    // If workspace ID is provided, filter by that too
-    const workspaceMatch = !workspaceId || reminder.workspaceId === workspaceId
+    if (workspaceId) {
+      return reminders.filter(reminder => reminder.workspaceId === workspaceId)
+    }
     
-    return userMatch && workspaceMatch
-  })
+    return reminders
+  } catch (error) {
+    console.error('Error getting user reminders:', error)
+    return []
+  }
 }
 
 /**
  * Get all reminders for a specific task
  * @param {string} taskId - The task ID to get reminders for
- * @returns {Array} - Array of reminder objects
+ * @returns {Promise<Array>} - Array of reminder objects
  */
-export const getTaskReminders = (taskId) => {
+export const getTaskReminders = async (taskId) => {
   if (!taskId) return []
   
-  const reminders = JSON.parse(localStorage.getItem('reminders') || '[]')
-  
-  return reminders.filter(reminder => reminder.taskId === taskId)
+  try {
+    // Use the service's caching system
+    return await reminderService.getTaskReminders(taskId)
+  } catch (error) {
+    console.error('Error getting task reminders:', error)
+    return []
+  }
 }
 
 /**
  * Update a reminder's status
  * @param {string} reminderId - The ID of the reminder to update
  * @param {string} status - The new status ('pending', 'sent', 'cancelled')
- * @returns {boolean} - Whether the update was successful
+ * @returns {Promise<boolean>} - Whether the update was successful
  */
-export const updateReminderStatus = (reminderId, status) => {
+export const updateReminderStatus = async (reminderId, status) => {
   if (!reminderId) return false
   
-  const reminders = JSON.parse(localStorage.getItem('reminders') || '[]')
-  const updatedReminders = reminders.map(reminder => {
-    if (reminder.id === reminderId) {
-      return { ...reminder, status }
-    }
-    return reminder
-  })
-  
-  localStorage.setItem('reminders', JSON.stringify(updatedReminders))
-  return true
+  try {
+    await reminderService.updateReminderStatus(reminderId, status)
+    
+    // Invalidate cache when updating a reminder's status
+    reminderCache.dueReminders.data = null;
+    
+    return true
+  } catch (error) {
+    console.error('Error updating reminder status:', error)
+    return false
+  }
 }
 
 /**
  * Delete a reminder
  * @param {string} reminderId - The ID of the reminder to delete
- * @returns {boolean} - Whether the deletion was successful
+ * @returns {Promise<boolean>} - Whether the deletion was successful
  */
-export const deleteReminder = (reminderId) => {
+export const deleteReminder = async (reminderId) => {
   if (!reminderId) return false
   
-  const reminders = JSON.parse(localStorage.getItem('reminders') || '[]')
-  const filteredReminders = reminders.filter(reminder => reminder.id !== reminderId)
-  
-  if (filteredReminders.length !== reminders.length) {
-    localStorage.setItem('reminders', JSON.stringify(filteredReminders))
+  try {
+    await reminderService.deleteReminder(reminderId)
+    
+    // Invalidate cache when deleting a reminder
+    reminderCache.dueReminders.data = null;
+    
     return true
+  } catch (error) {
+    console.error('Error deleting reminder:', error)
+    return false
   }
-  
-  return false
 }
 
 /**
  * Get all due reminders (reminders that are due now or in the past)
- * @returns {Array} - Array of due reminder objects
+ * @param {string} userId - User ID to filter by (optional)
+ * @returns {Promise<Array>} - Array of due reminder objects
  */
-export const getDueReminders = () => {
+export const getDueReminders = async (userId) => {
   const now = new Date()
-  const reminders = JSON.parse(localStorage.getItem('reminders') || '[]')
   
-  return reminders.filter(reminder => {
-    // Only consider pending reminders with a due date
-    if (reminder.status !== 'pending' || !reminder.dueDate) {
-      return false
-    }
+  // Check if we have valid cached data
+  if (reminderCache.dueReminders.data && 
+      (now - reminderCache.dueReminders.timestamp < reminderCache.CACHE_EXPIRY)) {
+    return reminderCache.dueReminders.data;
+  }
+  
+  try {
+    // Get all reminders or just this user's reminders if userId is provided
+    const allReminders = await reminderService.getReminders(userId)
     
-    const dueDate = new Date(reminder.dueDate)
-    return dueDate <= now
-  })
+    const dueReminders = allReminders.filter(reminder => {
+      // Only consider pending reminders with a due date
+      if (reminder.status !== 'pending' || !reminder.dueDate) {
+        return false
+      }
+      
+      const dueDate = new Date(reminder.dueDate)
+      return dueDate <= now
+    })
+    
+    // Update cache
+    reminderCache.dueReminders.data = dueReminders;
+    reminderCache.dueReminders.timestamp = now.getTime();
+    
+    return dueReminders
+  } catch (error) {
+    console.error('Error getting due reminders:', error)
+    return []
+  }
 }

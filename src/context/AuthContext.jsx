@@ -2,8 +2,9 @@
  * File: AuthContext.jsx
  * Purpose: Stores and provides auth state (currentUser, login, logout)
  */
-import { createContext, useState, useContext, useEffect } from 'react'
+import { createContext, useState, useContext, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import authService from '../api/authService'
 
 // Create the context
 const AuthContext = createContext(null)
@@ -14,76 +15,89 @@ export const useAuth = () => useContext(AuthContext)
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const authCheckCompleted = useRef(false)
   const navigate = useNavigate()
 
-  // Initialize auth state from localStorage
+  // Initialize auth state from Appwrite once
   useEffect(() => {
-    const user = localStorage.getItem('currentUser')
-    if (user) {
-      setCurrentUser(JSON.parse(user))
-    }
-    setLoading(false)
-  }, [])
+    // Prevent multiple auth checks during development with React StrictMode
+    if (authCheckCompleted.current) return;
+    
+    const checkAuth = async () => {
+      try {
+        setLoading(true);
+        const user = await authService.getCurrentUser();
+        if (user) {
+          setCurrentUser(user);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
+        authCheckCompleted.current = true;
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   // Login function
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    const user = users.find(u => u.email === email && u.password === password)
-    
-    if (user) {
-      // Create a sanitized user object (remove password)
-      const safeUser = { id: user.id, email: user.email, name: user.name }
-      localStorage.setItem('currentUser', JSON.stringify(safeUser))
-      setCurrentUser(safeUser)
-      navigate('/todo')
-      return { success: true }
+  const login = async (email, password) => {
+    try {
+      setLoading(true);
+      await authService.login(email, password);
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+      navigate('/todo');
+      return { success: true };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        message: error.message || 'Invalid email or password'
+      };
+    } finally {
+      setLoading(false);
     }
-    
-    return { 
-      success: false, 
-      message: 'Invalid email or password' 
-    }
-  }
+  };
 
   // Register function
-  const register = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    
-    // Check if user already exists
-    if (users.some(u => u.email === email)) {
-      return { 
-        success: false, 
-        message: 'User with this email already exists' 
-      }
+  const register = async (name, email, password) => {
+    try {
+      setLoading(true);
+      await authService.register(email, password, name);
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+      
+      // The WorkspaceContext will handle creating the default workspace
+      // We don't need to explicitly create it here
+      
+      navigate('/todo');
+      return { success: true };
+    } catch (error) {
+      console.error("Register error:", error);
+      return {
+        success: false,
+        message: error.message || 'Registration failed'
+      };
+    } finally {
+      setLoading(false);
     }
-    
-    // Create new user
-    const newUser = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      password
-    }
-    
-    // Save to localStorage
-    users.push(newUser)
-    localStorage.setItem('users', JSON.stringify(users))
-    
-    // Log in the new user
-    const safeUser = { id: newUser.id, email: newUser.email, name: newUser.name }
-    localStorage.setItem('currentUser', JSON.stringify(safeUser))
-    setCurrentUser(safeUser)
-    
-    navigate('/todo')
-    return { success: true }
-  }
+  };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem('currentUser')
-    setCurrentUser(null)
-    navigate('/login')
-  }
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await authService.logout();
+      setCurrentUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const value = {
     currentUser,
@@ -91,11 +105,11 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout
-  }
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
-  )
-}
+  );
+};

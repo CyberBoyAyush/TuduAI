@@ -10,13 +10,6 @@
  * - stillNeeded: Array of missing fields
  * - suggestions: Array of date/time/urgency suggestions
  */
-import OpenAI from 'openai'
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // For client-side usage (not recommended for production)
-})
 
 /**
  * Parse natural language task input using GPT-4.1 Mini
@@ -38,77 +31,26 @@ export const parseTaskInput = async (prompt) => {
   
   // Get current date and time for context
   const now = new Date();
-  const currentTimeStr = now.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  });
-  const currentDateStr = now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
   
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini-2025-04-14", // Use GPT-4.1 Mini
-      messages: [
-        {
-          role: "system",
-          content: `You are a concise todo assistant that helps users create structured todos.
-
-          CURRENT CONTEXT:
-          - Current date: ${currentDateStr}
-          - Current time: ${currentTimeStr}
-          - Current ISO timestamp: ${now.toISOString()}
-          
-          RULES:
-          1. Be extremely concise in follow-up messages
-          2. Never include date/time in titles
-          3. Always convert relative dates to absolute ISO format
-          4. Provide contextual suggestions (morning for breakfast, evening for dinner, etc.)
-          5. Keep responses direct and to the point
-          6. If you have a date, don't ask for it again
-          7. If there's a mention of "investor", "deadline", "urgent", set urgency to 4.5 automatically
-          8. Don't go in circles - listen carefully to user input
-          9. All date/time suggestions MUST be in the future
-          10. If current time is afternoon, don't suggest morning times for today
-          
-          Required fields to extract:
-          - title: Clear title without date/time info (e.g. "Meet with investor" not "Meet investor tomorrow")
-          - dueDate: ISO format date (YYYY-MM-DDTHH:MM:SS)
-          - urgency: Number from 1.0-5.0
-          
-          Additional fields to generate:
-          - followUp: Brief, direct question or statement about what's needed next
-          - stillNeeded: Array of missing fields (from: "title", "date", "urgency")
-          - suggestions: Array of suggestions for missing fields, each with:
-              - type: "date", "time", "datetime", or "urgency"
-              - value: ISO string for dates/times, number for urgency
-              - displayText: Human-readable text to show the user
-          
-          Format your response as a JSON object with these exact keys:
-          { 
-            "title": string or null,
-            "dueDate": string (ISO format) or null,
-            "urgency": number (1-5) or null,
-            "followUp": string,
-            "stillNeeded": string[],
-            "suggestions": [{ "type": string, "value": string|number, "displayText": string }]
-          }`
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.2, // Lower temperature for more consistent parsing
-      response_format: { type: "json_object" }
+    // Call our secure API endpoint instead of OpenAI directly
+    const response = await fetch('/api/parse-task', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt })
     });
-
-    // Parse the response
-    const result = JSON.parse(completion.choices[0].message.content);
+    
+    if (!response.ok) {
+      // Handle HTTP errors
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to parse task');
+    }
+    
+    // Get the data from our API response
+    const responseData = await response.json();
+    const result = responseData.data;
     
     // Validate the response
     if (!result.title || result.title.trim().length === 0) {
@@ -210,7 +152,7 @@ export const parseTaskInput = async (prompt) => {
     
     return result;
   } catch (error) {
-    console.error("Error parsing task with OpenAI:", error);
+    console.error("Error parsing task with API:", error);
     
     // Fallback to local parsing when API fails
     return fallbackParsing(prompt, now);
