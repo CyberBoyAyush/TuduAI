@@ -2,7 +2,7 @@
  * File: CommentSection.jsx
  * Purpose: Display and manage comments for a task
  */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate } from '../utils/date'
 import { useAuth } from '../context/AuthContext'
@@ -25,6 +25,29 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
   const [reminderError, setReminderError] = useState(null)
   const { currentUser } = useAuth()
   const { activeWorkspaceId } = useWorkspace()
+  
+  // Parse stringified comments
+  const parsedComments = useMemo(() => {
+    if (!comments || !Array.isArray(comments)) return [];
+    
+    return comments.map(comment => {
+      if (typeof comment === 'string') {
+        try {
+          return JSON.parse(comment);
+        } catch (e) {
+          // If parsing fails, return a fallback object
+          console.error('Error parsing comment JSON:', e);
+          return { 
+            id: 'invalid-' + Math.random().toString(36).substr(2, 9),
+            text: comment,
+            user: 'Unknown',
+            time: new Date().toISOString()
+          };
+        }
+      }
+      return comment;
+    });
+  }, [comments]);
   
   const handleAddComment = async (e) => {
     e.preventDefault()
@@ -55,7 +78,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
             taskTitle
           }
           
-          saveReminder(parsedReminder, contextData)
+          await saveReminder(parsedReminder, contextData)
           
           // Add a regular comment
           onAddComment(taskId, newComment)
@@ -160,14 +183,14 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
     <div className="p-4 space-y-4 bg-gray-50 dark:bg-neutral-800/80 transition-all">
       {/* Comments list */}
       <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-neutral-600 pr-1">
-        {comments.length === 0 ? (
+        {parsedComments.length === 0 ? (
           <div className="flex items-center justify-center p-4 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400 italic">
               No comments yet. Add the first one!
             </p>
           </div>
         ) : (
-          comments.map((comment) => (
+          parsedComments.map((comment) => (
             <motion.div
               key={comment.id}
               className="flex space-x-3"

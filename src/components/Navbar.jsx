@@ -24,7 +24,8 @@ import {
   KeyIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  BellAlertIcon
+  BellAlertIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 
 // Logo component for better reusability
@@ -45,7 +46,7 @@ const Logo = ({ className = "" }) => (
 
 export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleShowCompletedTasks }) {
   const { currentUser, logout } = useAuth()
-  const { workspaces, activeWorkspaceId, switchWorkspace, getActiveWorkspace } = useWorkspace()
+  const { workspaces, activeWorkspaceId, switchWorkspace, getActiveWorkspace, resetWorkspaces } = useWorkspace()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isWorkspaceSelectorOpen, setIsWorkspaceSelectorOpen] = useState(false)
@@ -59,6 +60,19 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   
   // Get the current active workspace
   const activeWorkspace = getActiveWorkspace()
+  
+  // Handle workspace reset
+  const handleResetWorkspaces = async () => {
+    if (confirm("This will reset all your workspaces. Continue?")) {
+      try {
+        await resetWorkspaces();
+        alert("Workspaces have been reset successfully");
+      } catch (error) {
+        console.error("Error resetting workspaces:", error);
+        alert("Failed to reset workspaces");
+      }
+    }
+  }
   
   return (
     <nav className="border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 sticky top-0 z-40 shadow-sm">
@@ -102,6 +116,20 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
         
         {/* Right side controls */}
         <div className="flex items-center space-x-2">
+          {/* Reset workspaces button - for testing purposes */}
+          {currentUser && (
+            <motion.button
+              onClick={handleResetWorkspaces}
+              className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Reset workspaces (for testing)"
+              aria-label="Reset workspaces"
+            >
+              <TrashIcon className="w-5 h-5" />
+            </motion.button>
+          )}
+          
           {/* Show completed tasks toggle - only show on todo page */}
           {currentUser && location.pathname === '/todo' && (
             <motion.button

@@ -39,22 +39,28 @@ const sendReminderEmail = async (reminder) => {
 /**
  * Process all due reminders and send notifications
  */
-const processDueReminders = async () => {
-  const dueReminders = getDueReminders()
-  
-  // Process each due reminder
-  for (const reminder of dueReminders) {
-    try {
-      // Send the email notification
-      const emailSent = await sendReminderEmail(reminder)
-      
-      if (emailSent) {
-        // Update the reminder status
-        updateReminderStatus(reminder.id, 'sent')
+const processDueReminders = async (userId) => {
+  try {
+    const dueReminders = await getDueReminders(userId)
+    
+    console.log(`Found ${dueReminders.length} due reminders to process`)
+    
+    // Process each due reminder
+    for (const reminder of dueReminders) {
+      try {
+        // Send the email notification
+        const emailSent = await sendReminderEmail(reminder)
+        
+        if (emailSent) {
+          // Update the reminder status
+          await updateReminderStatus(reminder.$id, 'done')
+        }
+      } catch (error) {
+        console.error(`Failed to process reminder ${reminder.$id}:`, error)
       }
-    } catch (error) {
-      console.error(`Failed to process reminder ${reminder.id}:`, error)
     }
+  } catch (error) {
+    console.error("Error processing due reminders:", error)
   }
 }
 
@@ -70,12 +76,16 @@ export default function ReminderService() {
     if (!currentUser) return
     
     // Process reminders immediately on mount
-    processDueReminders()
-    setLastCheck(new Date())
+    const checkReminders = async () => {
+      await processDueReminders(currentUser.$id)
+      setLastCheck(new Date())
+    }
+    
+    checkReminders()
     
     // Set up interval to check for due reminders
-    const intervalId = setInterval(() => {
-      processDueReminders()
+    const intervalId = setInterval(async () => {
+      await processDueReminders(currentUser.$id)
       setLastCheck(new Date())
     }, 60000) // Check every minute
     

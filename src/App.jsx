@@ -13,6 +13,9 @@ import Register from './pages/Register'
 import Todo from './pages/Todo'
 import { AuthProvider } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
+import { TaskProvider } from './context/TaskContext'
+import { ReminderProvider } from './context/ReminderContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   const location = useLocation()
@@ -47,26 +50,37 @@ function App() {
   return (
     <AuthProvider>
       <WorkspaceProvider>
-        <div className="min-h-screen flex flex-col">
-          <Navbar 
-            toggleTheme={toggleTheme} 
-            theme={theme} 
-            showCompletedTasks={showCompletedTasks} 
-            toggleShowCompletedTasks={toggleShowCompletedTasks} 
-          />
-          <ReminderService />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/todo" element={<Todo showCompletedTasks={showCompletedTasks} />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </AnimatePresence>
-          </main>
-        </div>
+        <TaskProvider>
+          <ReminderProvider>
+            <div className="min-h-screen flex flex-col">
+              <Navbar 
+                toggleTheme={toggleTheme} 
+                theme={theme} 
+                showCompletedTasks={showCompletedTasks} 
+                toggleShowCompletedTasks={toggleShowCompletedTasks} 
+              />
+              <ReminderService />
+              <main className="flex-grow container mx-auto px-4 py-8">
+                <AnimatePresence mode="wait">
+                  <Routes location={location} key={location.pathname}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route 
+                      path="/todo" 
+                      element={
+                        <ProtectedRoute>
+                          <Todo showCompletedTasks={showCompletedTasks} />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </AnimatePresence>
+              </main>
+            </div>
+          </ReminderProvider>
+        </TaskProvider>
       </WorkspaceProvider>
     </AuthProvider>
   )

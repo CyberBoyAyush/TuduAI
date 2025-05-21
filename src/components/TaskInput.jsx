@@ -67,6 +67,7 @@ export default function TaskInput({ onAddTask }) {
   const [error, setError] = useState(null)
   const [urgency, setUrgency] = useState(3)
   const [showTips, setShowTips] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const inputRef = useRef(null)
   
   // Focus input when expanded
@@ -107,8 +108,7 @@ export default function TaskInput({ onAddTask }) {
         // Do nothing, the UI will show the urgency selector
       } else {
         // We have everything we need, add the task
-        onAddTask(result)
-        resetForm()
+        await finalizeTask(result);
       }
     } catch (err) {
       setError('Failed to parse your task. Please try again.')
@@ -123,15 +123,24 @@ export default function TaskInput({ onAddTask }) {
     setParsedTask(null)
     setError(null)
     setIsExpanded(false)
+    setIsSaving(false)
   }
   
-  const finalizeTask = (updates = {}) => {
-    // Add the task with any additional details provided
-    onAddTask({
-      ...parsedTask,
-      ...updates
-    })
-    resetForm()
+  const finalizeTask = async (updates = {}) => {
+    try {
+      setIsSaving(true);
+      // Add the task with any additional details provided
+      await onAddTask({
+        ...parsedTask,
+        ...updates
+      });
+      resetForm();
+    } catch (error) {
+      console.error('Error saving task:', error);
+      setError('Failed to save task. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   }
   
   // Preview the AI-parsed task data
@@ -197,9 +206,17 @@ export default function TaskInput({ onAddTask }) {
       // If we have all the required fields, enable direct add
       if (result.title && result.dueDate && result.urgency) {
         // Wait for preview to show briefly before completing
-        setTimeout(() => {
-          onAddTask(result)
-          resetForm()
+        setTimeout(async () => {
+          try {
+            setIsSaving(true);
+            await onAddTask(result);
+            resetForm();
+          } catch (error) {
+            console.error('Error saving task:', error);
+            setError('Failed to save task. Please try again.');
+          } finally {
+            setIsSaving(false);
+          }
         }, 1500)
       }
     } catch (error) {

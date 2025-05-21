@@ -90,10 +90,10 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         <AnimatePresence>
           {sortTasks(groupedTasks.today).map((task) => (
             <TaskCard
-              key={task.id}
+              key={task.$id}
               task={task}
-              isExpanded={expandedTaskId === task.id}
-              onClick={() => handleTaskClick(task.id)}
+              isExpanded={expandedTaskId === task.$id}
+              onClick={() => handleTaskClick(task.$id)}
               onUpdate={onUpdate}
               onDelete={onDelete}
               onAddComment={onAddComment}
@@ -130,10 +130,10 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         <AnimatePresence>
           {sortTasks(groupedTasks.upcoming).map((task) => (
             <TaskCard
-              key={task.id}
+              key={task.$id}
               task={task}
-              isExpanded={expandedTaskId === task.id}
-              onClick={() => handleTaskClick(task.id)}
+              isExpanded={expandedTaskId === task.$id}
+              onClick={() => handleTaskClick(task.$id)}
               onUpdate={onUpdate}
               onDelete={onDelete}
               onAddComment={onAddComment}
@@ -170,10 +170,10 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         <AnimatePresence>
           {sortTasks(groupedTasks.future).map((task) => (
             <TaskCard
-              key={task.id}
+              key={task.$id}
               task={task}
-              isExpanded={expandedTaskId === task.id}
-              onClick={() => handleTaskClick(task.id)}
+              isExpanded={expandedTaskId === task.$id}
+              onClick={() => handleTaskClick(task.$id)}
               onUpdate={onUpdate}
               onDelete={onDelete}
               onAddComment={onAddComment}
