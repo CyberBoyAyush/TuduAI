@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import taskService from '../api/taskService'
+import reminderService from '../api/reminderService'
 
 /**
  * Custom hook for managing tasks with Appwrite persistence
@@ -164,6 +165,31 @@ export default function useTasks() {
         }
         return comment
       })
+      
+      // Find the comment that's being deleted to check if it's a reminder
+      const commentToDelete = parsedComments.find(c => c.id === commentId);
+      
+      // Check if the deleted comment contains a reminder command
+      if (commentToDelete && typeof commentToDelete.text === 'string') {
+        const reminderRegex = /^!(?:remindme|rmd)\s+/i;
+        if (reminderRegex.test(commentToDelete.text)) {
+          try {
+            // Find and delete all reminders associated with this task
+            const taskReminders = await reminderService.getTaskReminders(taskId);
+            
+            // Delete each reminder for this task
+            // This ensures we don't leave orphaned reminders
+            await Promise.all(
+              taskReminders.map(reminder => reminderService.deleteReminder(reminder.$id))
+            );
+            
+            console.log(`Deleted reminders for task ${taskId} after reminder comment was deleted`);
+          } catch (error) {
+            console.error('Error deleting associated reminders:', error);
+            // Continue with comment deletion even if reminder deletion fails
+          }
+        }
+      }
       
       // Filter out the comment to delete
       const filteredComments = parsedComments.filter(c => c.id !== commentId)
