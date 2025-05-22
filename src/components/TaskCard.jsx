@@ -16,7 +16,8 @@ import {
   ChatBubbleBottomCenterTextIcon,
   ExclamationCircleIcon,
   LightBulbIcon,
-  XMarkIcon
+  XMarkIcon,
+  FlagIcon
 } from '@heroicons/react/24/outline'
 
 export default function TaskCard({
@@ -179,14 +180,29 @@ export default function TaskCard({
     exit: { opacity: 0, y: -20, transition: { duration: 0.2 } }
   }
   
-  // Create urgency levels with their colors
+  // Create urgency levels with their colors and labels
   const urgencyLevels = [
-    { value: 5, label: '5.0', color: 'bg-red-500', name: 'Critical', description: 'Needs immediate attention' },
-    { value: 4, label: '4.0', color: 'bg-orange-500', name: 'High', description: 'Important and time-sensitive' },
-    { value: 3, label: '3.0', color: 'bg-yellow-500', name: 'Medium', description: 'Standard priority' },
-    { value: 2, label: '2.0', color: 'bg-blue-500', name: 'Low', description: 'Can wait if necessary' },
-    { value: 1, label: '1.0', color: 'bg-green-500', name: 'Minimal', description: 'Little to no urgency' }
+    { value: 5, label: '5.0', color: 'bg-black dark:bg-white', textColor: 'text-red-600 dark:text-red-400', name: 'Critical', description: 'Needs immediate attention' },
+    { value: 4, label: '4.0', color: 'bg-gray-800 dark:bg-gray-200', textColor: 'text-orange-600 dark:text-orange-400', name: 'High', description: 'Important and time-sensitive' },
+    { value: 3, label: '3.0', color: 'bg-gray-600 dark:bg-gray-400', textColor: 'text-yellow-600 dark:text-yellow-400', name: 'Medium', description: 'Standard priority' },
+    { value: 2, label: '2.0', color: 'bg-gray-400 dark:bg-gray-600', textColor: 'text-blue-600 dark:text-blue-400', name: 'Low', description: 'Can wait if necessary' },
+    { value: 1, label: '1.0', color: 'bg-gray-300 dark:bg-gray-700', textColor: 'text-green-600 dark:text-green-400', name: 'Minimal', description: 'Little to no urgency' }
   ]
+  
+  // Get the urgency color
+  const getUrgencyIndicator = (urgencyValue) => {
+    const level = urgencyLevels.find(l => l.value === Math.round(urgencyValue)) || urgencyLevels[2];
+    return level.color;
+  }
+  
+  // Get urgency text color and name
+  const getUrgencyDisplay = (urgencyValue) => {
+    const level = urgencyLevels.find(l => l.value === Math.round(urgencyValue)) || urgencyLevels[2];
+    return { 
+      textColor: level.textColor, 
+      name: level.name
+    };
+  }
   
   // Get formatted time for display
   const getFormattedTime = (date) => {
@@ -219,11 +235,7 @@ export default function TaskCard({
     }) + ' at';
   }
   
-  // Get the urgency color
-  const getUrgencyIndicator = (urgencyValue) => {
-    const level = urgencyLevels.find(l => l.value === Math.round(urgencyValue)) || urgencyLevels[2];
-    return level.color;
-  }
+  const urgencyDisplay = getUrgencyDisplay(task.urgency);
   
   return (
     <motion.div
@@ -231,7 +243,7 @@ export default function TaskCard({
       initial="initial"
       animate="animate"
       exit="exit"
-      className={`bg-white dark:bg-neutral-900 rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-700 shadow-md mb-3 transition-opacity ${
+      className={`bg-primary-100 rounded-md overflow-hidden border border-primary-300 shadow-sm mb-3 transition-opacity font-sans ${
         task.completed ? 'opacity-60' : 'opacity-100'
       }`}
     >
@@ -251,10 +263,10 @@ export default function TaskCard({
             {/* Checkbox */}
             <button
               onClick={handleToggleComplete}
-              className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center ${
+              className={`mt-1 w-5 h-5 rounded-sm flex items-center justify-center ${
                 task.completed
-                  ? 'bg-green-500 text-white'
-                  : 'border border-gray-300 dark:border-neutral-600'
+                  ? 'bg-primary-700 text-primary-50 border-primary-700 border'
+                  : 'border border-primary-800'
               }`}
             >
               {task.completed && <CheckIcon className="w-3 h-3" />}
@@ -262,22 +274,38 @@ export default function TaskCard({
             
             {/* Title and due date */}
             <div className="flex-grow">
-              <h3 className={`font-medium text-gray-800 dark:text-white ${
-                task.completed ? 'line-through text-gray-500 dark:text-neutral-400' : ''
-              }`}>
-                {task.title}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className={`font-medium text-primary-700 ${
+                  task.completed ? 'line-through text-primary-800' : ''
+                }`}>
+                  {task.title}
+                </h3>
+                
+                {/* Urgency badge - NEW */}
+                <span 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUrgencyClick(e);
+                  }}
+                  className={`ml-2 px-2 py-0.5 text-xs font-medium rounded-md border border-primary-300 bg-primary-100 ${urgencyDisplay.textColor} flex items-center cursor-pointer`}
+                  title="Click to change urgency"
+                >
+                  <FlagIcon className="w-3 h-3 mr-1" />
+                  {urgencyDisplay.name}
+                </span>
+              </div>
               
-              <div className="flex flex-wrap items-center mt-1 text-sm">
+              <div className="flex flex-wrap items-center mt-2 text-sm">
                 <div className="flex items-center mr-2">
                   <span onClick={handleUrgencyClick} className="flex items-center cursor-pointer">
                     <span className={`w-7 h-1.5 rounded-sm mr-1 ${getUrgencyIndicator(task.urgency)}`}></span>
-                    <span className="text-amber-600 dark:text-yellow-400">Urgency: {task.urgency?.toFixed(1)}</span>
+                    <span className="text-primary-800">{task.urgency?.toFixed(1)}</span>
                   </span>
                 </div>
                 
                 {task.dueDate && (
-                  <span className="text-gray-600 dark:text-neutral-400">
+                  <span className="text-primary-800 flex items-center">
+                    <ClockIcon className="w-3.5 h-3.5 mr-1" />
                     {getFormattedDate(task.dueDate)} {getFormattedTime(task.dueDate)}
                   </span>
                 )}
@@ -285,7 +313,7 @@ export default function TaskCard({
               
               {/* Comment count indicator */}
               {commentCount > 0 && (
-                <div className="flex items-center mt-2 text-xs text-gray-500 dark:text-neutral-400">
+                <div className="flex items-center mt-2 text-xs text-primary-800">
                   <ChatBubbleBottomCenterTextIcon className="w-3 h-3 mr-1" />
                   {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
                 </div>
@@ -298,7 +326,7 @@ export default function TaskCard({
                 onClick={handleReschedule}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="p-1 text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
+                className="p-1 text-primary-800 hover:text-primary-900"
               >
                 <ClockIcon className="w-4 h-4" />
               </motion.button>
@@ -307,7 +335,7 @@ export default function TaskCard({
                 onClick={handleDelete}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="p-1 text-gray-400 dark:text-neutral-500 hover:text-red-500"
+                className="p-1 text-primary-800 hover:text-red-500"
               >
                 <TrashIcon className="w-4 h-4" />
               </motion.button>
@@ -316,7 +344,7 @@ export default function TaskCard({
                 onClick={onClick}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="p-1 text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
+                className="p-1 text-primary-800 hover:text-primary-900"
               >
                 {isExpanded ? (
                   <ChevronUpIcon className="w-4 h-4" />
@@ -332,7 +360,7 @@ export default function TaskCard({
       {/* Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm font-sans"
           onClick={cancelDelete}
         >
           <motion.div 
@@ -340,15 +368,15 @@ export default function TaskCard({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white dark:bg-neutral-800 rounded-lg p-5 w-80 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-5 w-80 shadow-md flex flex-col border border-[#d8d6cf] dark:border-[#3a3a3a]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-4">
-              <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-3 shadow-inner">
-                <TrashIcon className="w-6 h-6 text-red-500 dark:text-red-400" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-[#e8e6d9] dark:bg-[#2a2a2a] flex items-center justify-center mb-3 border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                <TrashIcon className="w-6 h-6 text-[#f76f52]" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Delete Task</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className="text-lg font-semibold text-[#202020] dark:text-[#f2f0e3] mb-1">Delete Task</h3>
+              <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf]">
                 Are you sure you want to delete this task? This action cannot be undone.
               </p>
             </div>
@@ -358,7 +386,7 @@ export default function TaskCard({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={cancelDelete}
-                className="flex-1 py-2 px-4 bg-gray-200 dark:bg-neutral-700 rounded-md text-gray-800 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors shadow-sm"
+                className="flex-1 py-2 px-4 bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3] font-medium border border-[#d8d6cf] dark:border-[#3a3a3a] hover:bg-[#d8d6cf] dark:hover:bg-[#333333]"
               >
                 Cancel
               </motion.button>
@@ -366,7 +394,7 @@ export default function TaskCard({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={confirmDelete}
-                className="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 rounded-md text-white font-medium transition-colors shadow-sm"
+                className="flex-1 py-2 px-4 bg-[#f76f52] hover:bg-[#e55e41] text-[#f2f0e3] rounded-md font-medium transition-colors border border-transparent"
               >
                 Delete
               </motion.button>
@@ -378,7 +406,7 @@ export default function TaskCard({
       {/* Urgency Selection Modal */}
       {isUrgencyModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm font-sans"
           onClick={handleCloseUrgencyModal}
         >
           <motion.div 
@@ -386,14 +414,14 @@ export default function TaskCard({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white dark:bg-neutral-800 rounded-lg p-5 w-80 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-5 w-80 shadow-md flex flex-col border border-[#d8d6cf] dark:border-[#3a3a3a]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Update Urgency</h3>
+              <h3 className="text-lg font-semibold text-[#202020] dark:text-[#f2f0e3]">Update Urgency</h3>
               <motion.button 
                 onClick={handleCloseUrgencyModal}
-                className="text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                className="text-[#202020] dark:text-[#f2f0e3] hover:text-[#3a3a3a] dark:hover:text-[#d1cfbf] transition-colors"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
@@ -408,16 +436,16 @@ export default function TaskCard({
                   onClick={(e) => handleSetUrgency(level.value, e)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`flex items-center w-full p-3 rounded-md transition-all ${
+                  className={`flex items-center w-full p-3 rounded-md transition-all border ${
                     Math.round(task.urgency) === level.value 
-                      ? 'bg-gray-100 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-500 shadow-inner' 
-                      : 'bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-neutral-800 shadow-sm'
+                      ? 'bg-[#e8e6d9] dark:bg-[#2a2a2a] border-[#d8d6cf] dark:border-[#3a3a3a]' 
+                      : 'bg-[#f2f0e3] dark:bg-[#202020] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#3a3a3a]'
                   }`}
                 >
-                  <div className={`w-8 h-3 rounded-sm ${level.color} shadow-inner`}></div>
+                  <div className={`w-8 h-3 rounded-sm ${level.color}`}></div>
                   <div className="ml-3 text-left">
-                    <span className="font-medium text-gray-800 dark:text-white block">{level.name} ({level.label})</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{level.description}</span>
+                    <span className={`font-medium ${level.textColor} block`}>{level.name} ({level.label})</span>
+                    <span className="text-xs text-[#3a3a3a] dark:text-[#d1cfbf]">{level.description}</span>
                   </div>
                   {level.value >= 4 && (
                     <ExclamationCircleIcon className="w-4 h-4 text-red-500 ml-auto flex-shrink-0" />
@@ -432,7 +460,7 @@ export default function TaskCard({
       {/* Reschedule modal */}
       {isRescheduling && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm font-sans"
           onClick={handleCloseReschedule}
         >
           <motion.div 
@@ -440,32 +468,32 @@ export default function TaskCard({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white dark:bg-neutral-800 rounded-xl p-6 w-96 z-20 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 w-96 z-20 shadow-md flex flex-col border border-[#d8d6cf] dark:border-[#3a3a3a]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
-                <span className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg mr-3">
-                  <ClockIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3] flex items-center">
+                <span className="bg-[#e8e6d9] dark:bg-[#2a2a2a] p-2 rounded-md mr-3 border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                  <ClockIcon className="w-5 h-5 text-[#f76f52]" />
                 </span>
                 Reschedule Task
               </h3>
               <motion.button 
                 onClick={handleCloseReschedule}
-                className="text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-white transition-colors bg-gray-100 dark:bg-neutral-700 p-1 rounded-full"
-                whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.1)' }}
+                className="text-[#202020] dark:text-[#f2f0e3] hover:text-[#3a3a3a] dark:hover:text-[#d1cfbf] bg-[#e8e6d9] dark:bg-[#2a2a2a] p-1 rounded-full"
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
                 <XMarkIcon className="w-5 h-5" />
               </motion.button>
             </div>
             
-            <div className="mb-4 text-gray-600 dark:text-gray-300 text-sm bg-gray-50 dark:bg-neutral-700/40 p-3 rounded-lg border border-gray-200 dark:border-neutral-600/30">
-              <span className="font-medium text-gray-800 dark:text-white">{task.title}</span>
+            <div className="mb-4 text-[#202020] dark:text-[#f2f0e3] text-sm bg-[#e8e6d9] dark:bg-[#2a2a2a] p-3 rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
+              <span className="font-medium">{task.title}</span>
             </div>
             
             <div className="mb-5">
-              <label htmlFor="reschedule-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="reschedule-input" className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3] mb-2">
                 When would you like to reschedule this task?
               </label>
               <div className="flex items-center gap-2 mb-3">
@@ -476,23 +504,23 @@ export default function TaskCard({
                     value={rescheduleInput}
                     onChange={(e) => setRescheduleInput(e.target.value)}
                     placeholder="tomorrow, next week, May 5th..."
-                    className="w-full p-3 pl-10 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg text-gray-800 dark:text-white shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full p-3 pl-10 bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3] border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[#f76f52]"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleRescheduleSubmit(e);
                     }}
                   />
-                  <ClockIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+                  <ClockIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                 </div>
                 <motion.button
                   onClick={handleRescheduleSubmit}
                   disabled={isProcessing}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="px-4 py-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3] rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-[#d8d6cf] dark:border-[#3a3a3a]"
                 >
                   {isProcessing ? 
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 
+                    <div className="w-5 h-5 border-2 border-[#202020] dark:border-[#f2f0e3] border-t-transparent rounded-full animate-spin"></div> : 
                     "Set"
                   }
                 </motion.button>
@@ -500,11 +528,11 @@ export default function TaskCard({
               
               {/* Current date indicator */}
               {task.dueDate && (
-                <div className="flex items-center text-sm mb-5 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
-                  <div className="bg-amber-100 dark:bg-amber-800/30 p-1.5 rounded-full mr-2">
-                    <ClockIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <div className="flex items-center text-sm mb-5 p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3]">
+                  <div className="bg-[#f2f0e3] dark:bg-[#202020] p-1.5 rounded-full mr-2 border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                    <ClockIcon className="w-4 h-4 text-[#f76f52]" />
                   </div>
-                  <span className="text-amber-800 dark:text-amber-200">
+                  <span>
                     Currently due: {new Date(task.dueDate).toLocaleString('en-US', {
                       weekday: 'short',
                       month: 'short',
@@ -519,8 +547,8 @@ export default function TaskCard({
               {/* Suggestions */}
               {suggestions.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 font-medium mb-3 flex items-center">
-                    <LightBulbIcon className="w-4 h-4 mr-1.5 text-amber-500" />
+                  <p className="text-sm text-[#202020] dark:text-[#f2f0e3] font-medium mb-3 flex items-center">
+                    <LightBulbIcon className="w-4 h-4 mr-1.5 text-[#f76f52]" />
                     Quick Options:
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -528,11 +556,11 @@ export default function TaskCard({
                       <motion.button
                         key={index}
                         onClick={() => handleSelectSuggestion(suggestion)}
-                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(79, 70, 229, 0.1)' }}
+                        whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-4 py-2 text-sm bg-gray-100 dark:bg-neutral-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-gray-800 dark:text-gray-200 rounded-lg transition-colors shadow-sm border border-gray-200 dark:border-neutral-700 font-medium flex items-center"
+                        className="px-4 py-2 text-sm bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3] rounded-md transition-colors border border-[#d8d6cf] dark:border-[#3a3a3a] font-medium flex items-center"
                       >
-                        <ClockIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500" />
+                        <ClockIcon className="w-3.5 h-3.5 mr-1.5 text-[#f76f52]" />
                         {suggestion.displayText}
                       </motion.button>
                     ))}
@@ -541,7 +569,7 @@ export default function TaskCard({
               )}
               
               {/* Help text */}
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-5 bg-gray-50 dark:bg-neutral-700/20 p-2.5 rounded-lg border border-gray-200 dark:border-neutral-700/50">
+              <p className="text-xs text-[#3a3a3a] dark:text-[#d1cfbf] mt-5 bg-[#e8e6d9] dark:bg-[#2a2a2a] p-2.5 rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
                 <span className="font-medium block mb-1">💡 Pro tip:</span>
                 Try typing natural phrases like "tomorrow afternoon", "next Tuesday at 3pm", or "June 15th at 10am"
               </p>
@@ -558,7 +586,7 @@ export default function TaskCard({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="border-t border-gray-200 dark:border-neutral-700 overflow-hidden"
+            className="border-t border-primary-300 overflow-hidden"
           >
             <CommentSection
               taskId={task.$id}

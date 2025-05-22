@@ -64,17 +64,17 @@ export default function Todo({ showCompletedTasks }) {
   
   if (authLoading || tasksLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-64 font-sans">
         <div className="flex flex-col items-center">
-          <ArrowPathIcon className="w-10 h-10 text-primary-500 animate-spin" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your tasks...</p>
+          <ArrowPathIcon className="w-10 h-10 text-primary-700 animate-spin" />
+          <p className="mt-4 text-primary-800">Loading your tasks...</p>
         </div>
       </div>
     )
   }
   
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto font-sans">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -94,13 +94,13 @@ export default function Todo({ showCompletedTasks }) {
       
       {/* Refresh button and section header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Your Tasks</h2>
+        <h2 className="text-xl font-bold text-primary-700">Your Tasks</h2>
         <motion.button
           onClick={refreshTasks}
           disabled={refreshing}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/30 transition-colors shadow-sm"
+          className="flex items-center px-3 py-2 bg-primary-100 text-primary-700 rounded-md border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm"
         >
           <ArrowPathIcon className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           <span className="text-sm font-medium">Refresh Tasks</span>

@@ -75,7 +75,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
   const getReminderStatusBadge = (reminder) => {
     if (reminder.status === 'done') {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-xs font-medium text-green-700 dark:text-green-400">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
           <CheckCircleIcon className="w-3 h-3 mr-1" />
           Sent
         </span>
@@ -84,7 +84,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
     
     if (!reminder.dueDate) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium text-gray-600 dark:text-gray-400">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
           <ClockIcon className="w-3 h-3 mr-1" />
           No date
         </span>
@@ -93,7 +93,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
     
     if (isPast(reminder.dueDate)) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-xs font-medium text-amber-600 dark:text-amber-400">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
           <ClockIcon className="w-3 h-3 mr-1" />
           Sending...
         </span>
@@ -101,7 +101,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
     }
     
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-medium text-blue-600 dark:text-blue-400">
+      <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
         <CalendarIcon className="w-3 h-3 mr-1" />
         {formatDate(reminder.dueDate)}
       </span>
@@ -120,7 +120,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
         <>
           {/* Backdrop overlay */}
           <motion.div
-            className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm z-[9999]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -129,13 +129,10 @@ export default function RemindersPanel({ isOpen, onClose }) {
           
           {/* Panel */}
           <motion.div
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-neutral-900 shadow-2xl h-full overflow-auto z-[9999] border-l border-gray-200 dark:border-neutral-700"
-            initial={{ x: '100%', boxShadow: "0 0 0 rgba(0, 0, 0, 0)" }}
-            animate={{ 
-              x: 0, 
-              boxShadow: "0 0 40px rgba(0, 0, 0, 0.2)" 
-            }}
-            exit={{ x: '100%', boxShadow: "0 0 0 rgba(0, 0, 0, 0)" }}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-primary-50 shadow-md h-full overflow-auto z-[9999] border-l border-primary-300 font-sans"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
             transition={{ 
               type: 'spring', 
               damping: 25, 
@@ -144,32 +141,32 @@ export default function RemindersPanel({ isOpen, onClose }) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-neutral-700 flex items-center justify-between bg-gradient-to-r from-white to-gray-50 dark:from-neutral-800 dark:to-neutral-900 sticky top-0 z-10">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
-                <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-lg mr-3">
-                  <BellAlertIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <div className="p-4 border-b border-primary-300 flex items-center justify-between sticky top-0 z-10 bg-primary-50">
+              <h2 className="text-lg font-semibold text-primary-700 flex items-center">
+                <div className="bg-primary-100 p-2 rounded-md mr-3 border border-primary-300">
+                  <BellAlertIcon className="w-5 h-5 text-primary-700" />
                 </div>
                 Your Reminders
               </h2>
               <motion.button 
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                className="p-2 rounded-full hover:bg-primary-100 transition-colors"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <XMarkIcon className="w-5 h-5 text-primary-700" />
               </motion.button>
             </div>
             
             {/* Filter buttons */}
-            <div className="sticky top-[73px] z-10 flex p-3 bg-white dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700 shadow-sm">
-              <div className="bg-gray-100 dark:bg-neutral-700 p-1 rounded-lg flex w-full">
+            <div className="sticky top-[73px] z-10 flex p-3 bg-primary-50 border-b border-primary-300">
+              <div className="bg-primary-100 p-1 rounded-md flex w-full">
                 <button
                   onClick={() => setFilterStatus('all')}
                   className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
                     filterStatus === 'all' 
-                      ? 'bg-white dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                      : 'text-gray-700 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-indigo-400'
+                      ? 'bg-primary-50 text-primary-700 shadow-sm border border-primary-300' 
+                      : 'text-primary-800 hover:text-primary-700'
                   }`}
                 >
                   All
@@ -178,8 +175,8 @@ export default function RemindersPanel({ isOpen, onClose }) {
                   onClick={() => setFilterStatus('pending')}
                   className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
                     filterStatus === 'pending' 
-                      ? 'bg-white dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                      : 'text-gray-700 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-indigo-400'
+                      ? 'bg-primary-50 text-primary-700 shadow-sm border border-primary-300' 
+                      : 'text-primary-800 hover:text-primary-700'
                   }`}
                 >
                   Pending
@@ -188,8 +185,8 @@ export default function RemindersPanel({ isOpen, onClose }) {
                   onClick={() => setFilterStatus('sent')}
                   className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
                     filterStatus === 'sent' 
-                      ? 'bg-white dark:bg-neutral-900 text-indigo-600 dark:text-indigo-400 shadow-sm' 
-                      : 'text-gray-700 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-indigo-400'
+                      ? 'bg-primary-50 text-primary-700 shadow-sm border border-primary-300' 
+                      : 'text-primary-800 hover:text-primary-700'
                   }`}
                 >
                   Sent
@@ -200,17 +197,17 @@ export default function RemindersPanel({ isOpen, onClose }) {
             <div className="p-4">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-12 h-12 rounded-full border-4 border-indigo-100 dark:border-indigo-900/40 border-t-indigo-600 dark:border-t-indigo-400 animate-spin mb-4"></div>
-                  <p className="text-gray-500 dark:text-gray-400">Loading reminders...</p>
+                  <div className="w-12 h-12 rounded-full border-2 border-primary-300 border-t-primary-700 animate-spin mb-4"></div>
+                  <p className="text-primary-800">Loading reminders...</p>
                 </div>
               ) : reminders.length === 0 ? (
                 <div className="text-center py-16 px-4">
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                    <BellAlertIcon className="w-10 h-10 text-indigo-400 dark:text-indigo-500" />
+                  <div className="bg-primary-100 rounded-md p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center border border-primary-300">
+                    <BellAlertIcon className="w-10 h-10 text-primary-700" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No reminders</h3>
-                  <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-                    Use <code className="bg-gray-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-indigo-600 dark:text-indigo-400">!remindme</code> or <code className="bg-gray-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded text-indigo-600 dark:text-indigo-400">!rmd</code> in a comment to set a reminder
+                  <h3 className="text-lg font-medium text-primary-700 mb-2">No reminders</h3>
+                  <p className="text-primary-800 max-w-xs mx-auto">
+                    Use <code className="bg-primary-100 px-1.5 py-0.5 rounded-md text-primary-700 border border-primary-300">!remindme</code> or <code className="bg-primary-100 px-1.5 py-0.5 rounded-md text-primary-700 border border-primary-300">!rmd</code> in a comment to set a reminder
                   </p>
                 </div>
               ) : (
@@ -224,19 +221,19 @@ export default function RemindersPanel({ isOpen, onClose }) {
                     .map(reminder => (
                       <motion.div
                         key={reminder.$id}
-                        className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
+                        className="bg-primary-50 border border-primary-300 rounded-md p-4 shadow-sm"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         whileHover={{ y: -2 }}
                       >
                         <div className="flex justify-between items-start mb-3">
-                          <span className="font-medium text-gray-800 dark:text-gray-200">
+                          <span className="font-medium text-primary-700">
                             {reminder.text}
                           </span>
                           <motion.button
                             onClick={() => handleDelete(reminder.$id)}
-                            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="text-primary-800 hover:text-primary-700 transition-colors p-1 rounded-full"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                           >
@@ -247,7 +244,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
                         <div className="flex justify-between items-center">
                           {getReminderStatusBadge(reminder)}
                           
-                          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-700 px-2 py-1 rounded-full">
+                          <span className="text-xs text-primary-800 bg-primary-100 px-2 py-1 rounded-md border border-primary-300">
                             {reminder.taskTitle || "Unknown task"}
                           </span>
                         </div>
@@ -262,15 +259,15 @@ export default function RemindersPanel({ isOpen, onClose }) {
                      return r.status === filterStatus;
                    }) && (
                     <div className="text-center py-12 px-4">
-                      <div className="bg-gray-100 dark:bg-neutral-800 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <ClockIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                      <div className="bg-primary-100 rounded-md p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-primary-300">
+                        <ClockIcon className="w-8 h-8 text-primary-700" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <h3 className="text-lg font-medium text-primary-700 mb-2">
                         No {filterStatus} reminders
                       </h3>
                       <button 
                         onClick={() => setFilterStatus('all')} 
-                        className="mt-2 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="mt-2 text-primary-700 bg-primary-100 px-4 py-2 rounded-md hover:bg-primary-200 transition-colors border border-primary-300"
                       >
                         Show all reminders
                       </button>

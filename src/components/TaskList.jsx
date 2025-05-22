@@ -73,7 +73,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-sans">
       {/* Today & Overdue column */}
       <motion.div 
         className="space-y-4"
@@ -81,8 +81,8 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
-          <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
+        <div className="border-b pb-2 border-primary-300">
+          <h2 className="font-bold text-lg text-primary-700">
             Today & Overdue {groupedTasks.today.length > 0 && `(${groupedTasks.today.length})`}
           </h2>
         </div>
@@ -103,7 +103,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
           
           {groupedTasks.today.length === 0 && (
             <motion.div 
-              className="bg-white dark:bg-neutral-800 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-neutral-700"
+              className="bg-primary-50 rounded-md p-4 text-center text-primary-800 border border-primary-300"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -121,8 +121,8 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
-          <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
+        <div className="border-b pb-2 border-primary-300">
+          <h2 className="font-bold text-lg text-primary-700">
             Next 7 Days {groupedTasks.upcoming.length > 0 && `(${groupedTasks.upcoming.length})`}
           </h2>
         </div>
@@ -143,7 +143,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
           
           {groupedTasks.upcoming.length === 0 && (
             <motion.div 
-              className="bg-white dark:bg-neutral-800 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-neutral-700"
+              className="bg-primary-50 rounded-md p-4 text-center text-primary-800 border border-primary-300"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -161,8 +161,8 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
         initial="hidden"
         animate="visible"
       >
-        <div className="border-b pb-2 border-gray-500 dark:border-gray-600">
-          <h2 className="font-bold text-lg text-gray-800 dark:text-gray-100">
+        <div className="border-b pb-2 border-primary-300">
+          <h2 className="font-bold text-lg text-primary-700">
             Upcoming {groupedTasks.future.length > 0 && `(${groupedTasks.future.length})`}
           </h2>
         </div>
@@ -183,7 +183,7 @@ export default function TaskList({ tasks, onUpdate, onDelete, onAddComment, onDe
           
           {groupedTasks.future.length === 0 && (
             <motion.div 
-              className="bg-white dark:bg-neutral-800 rounded-lg p-4 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-neutral-700"
+              className="bg-primary-50 rounded-md p-4 text-center text-primary-800 border border-primary-300"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
