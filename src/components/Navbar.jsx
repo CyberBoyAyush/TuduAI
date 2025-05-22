@@ -31,9 +31,9 @@ import {
 
 // Logo component for better reusability
 const Logo = ({ className = "" }) => (
-  <div className={`flex items-center space-x-2 ${className}`}>
+  <div className={`flex items-center space-x-2 ${className} font-sans`}>
     <motion.div 
-      className="bg-gradient-to-br from-indigo-500 to-violet-600 w-9 h-9 rounded-xl flex items-center justify-center shadow-md shadow-indigo-500/20"
+      className="bg-[#f76f52] w-8 h-8 rounded-md flex items-center justify-center shadow-sm"
       whileHover={{ 
         scale: 1.05, 
         rotate: [0, -5, 5, 0],
@@ -41,9 +41,9 @@ const Logo = ({ className = "" }) => (
       }}
       whileTap={{ scale: 0.95 }}
     >
-      <CheckCircleIcon className="w-5 h-5 text-white" />
+      <CheckCircleIcon className="w-5 h-5 text-[#f2f0e3] dark:text-[#202020]" />
     </motion.div>
-    <span className="font-bold text-xl bg-gradient-to-br from-indigo-600 to-violet-600 bg-clip-text text-transparent tracking-tight">
+    <span className="font-bold text-xl text-[#202020] dark:text-[#f2f0e3] tracking-tight">
       TuduAI
     </span>
   </div>
@@ -155,7 +155,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   
   return (
     <>
-      <nav className="border-b border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 backdrop-blur-md bg-opacity-90 dark:bg-opacity-90 sticky top-0 z-40 shadow-sm">
+      <nav className="border-b border-[#d8d6cf] dark:border-[#2a2a2a] bg-[#f2f0e3] dark:bg-[#202020] font-sans backdrop-blur-md bg-opacity-90 dark:bg-opacity-90 sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
           {/* Logo - always visible */}
           <div className="flex items-center">
@@ -168,27 +168,27 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               <div className="ml-5 relative" ref={workspaceRef}>
                 <motion.button
                   onClick={() => setIsWorkspaceSelectorOpen(!isWorkspaceSelectorOpen)}
-                  className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-neutral-800/70 hover:bg-gray-200 dark:hover:bg-neutral-700/70 text-gray-800 dark:text-white transition-all text-sm border border-gray-200/50 dark:border-neutral-700/70 shadow-sm"
-                  whileHover={{ scale: 1.03, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center space-x-2 px-3.5 py-2 rounded-md bg-[#e8e6d9] dark:bg-[#2a2a2a] hover:bg-[#dbd9cc] dark:hover:bg-[#333333] text-[#202020] dark:text-[#f2f0e3] transition-all text-sm border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   aria-expanded={isWorkspaceSelectorOpen}
                   aria-label="Select workspace"
                   title="Press Option/Alt + number to switch workspaces"
                   initial={{ boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}
                   animate={{ 
                     boxShadow: isWorkspaceSelectorOpen 
-                      ? "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" 
+                      ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
                       : "0 1px 2px 0 rgba(0, 0, 0, 0.05)" 
                   }}
                 >
-                  <BuildingOfficeIcon className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                  <BuildingOfficeIcon className="w-4 h-4 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                   <span className="font-medium max-w-[120px] truncate">
                     {activeWorkspace?.name || 'Default'}
                   </span>
                   <motion.span 
                     animate={{ rotate: isWorkspaceSelectorOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    className="ml-1 text-gray-500 dark:text-gray-400"
+                    className="ml-1 text-[#3a3a3a] dark:text-[#d1cfbf]"
                   >
                     <ChevronDownIcon className="w-4 h-4" />
                   </motion.span>
@@ -222,13 +222,13 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {currentUser && location.pathname === '/todo' && (
               <motion.button
                 onClick={toggleShowCompletedTasks}
-                className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all relative group"
+                className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label={showCompletedTasks ? "Hide completed tasks" : "Show completed tasks"}
               >
                 <motion.div
-                  className="absolute inset-0 bg-gray-100 dark:bg-neutral-800 rounded-xl opacity-0 group-hover:opacity-100 -z-10"
+                  className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
                   initial={false}
                   animate={{ scale: showCompletedTasks ? 1 : 0.8 }}
                   transition={{ duration: 0.2 }}
@@ -239,7 +239,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                   <EyeIcon className="w-5 h-5" />
                 )}
                 <span className="sr-only">{showCompletedTasks ? "Hide completed" : "Show completed"}</span>
-                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
                   {showCompletedTasks ? "Hide" : "Show"}
                 </span>
               </motion.button>
@@ -249,18 +249,18 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {currentUser && (
               <motion.button
                 onClick={() => setIsRemindersPanelOpen(true)}
-                className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-amber-500 dark:hover:text-amber-400 transition-all relative group"
+                className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label="Your reminders"
               >
                 <motion.div
-                  className="absolute inset-0 bg-gray-100 dark:bg-neutral-800 rounded-xl opacity-0 group-hover:opacity-100 -z-10"
+                  className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
                   transition={{ duration: 0.2 }}
                 />
                 <BellAlertIcon className="w-5 h-5" />
                 <span className="sr-only">Reminders</span>
-                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
                   Reminders
                 </span>
               </motion.button>
@@ -269,7 +269,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {/* Theme toggle */}
             <motion.button
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-yellow-500 dark:hover:text-blue-400 transition-all relative group"
+              className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
               whileHover={{ 
                 scale: 1.05, 
                 rotate: theme === 'dark' ? 180 : 0,
@@ -282,7 +282,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               aria-label={theme === 'dark' ? "Switch to light mode" : "Switch to dark mode"}
             >
               <motion.div
-                className="absolute inset-0 bg-gray-100 dark:bg-neutral-800 rounded-xl opacity-0 group-hover:opacity-100 -z-10"
+                className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
                 transition={{ duration: 0.2 }}
               />
               {theme === 'dark' ? (
@@ -291,7 +291,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 <MoonIcon className="w-5 h-5" />
               )}
               <span className="sr-only">{theme === 'dark' ? "Light mode" : "Dark mode"}</span>
-              <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+              <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
                 {theme === 'dark' ? "Light" : "Dark"}
               </span>
             </motion.button>
@@ -301,26 +301,26 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               <div className="relative" ref={profileRef}>
                 <motion.button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center space-x-2 py-1.5 px-2 sm:px-3 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all ml-1"
+                  className="flex items-center space-x-2 py-1.5 px-2 sm:px-3 rounded-md hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-all ml-1"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   aria-expanded={isProfileOpen}
                   aria-haspopup="true"
                 >
                   <motion.div 
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-medium text-sm shadow-md shadow-indigo-500/20 ring-2 ring-white dark:ring-neutral-900"
+                    className="w-8 h-8 rounded-md bg-[#f76f52] flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] font-medium text-sm shadow-sm ring-2 ring-[#f2f0e3] dark:ring-[#202020]"
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     {currentUser.name?.charAt(0).toUpperCase() || currentUser.email?.charAt(0).toUpperCase() || 'U'}
                   </motion.div>
-                  <span className="text-sm hidden sm:inline font-medium text-gray-800 dark:text-gray-200">
+                  <span className="text-sm hidden sm:inline font-medium text-[#202020] dark:text-[#f2f0e3]">
                     {currentUser.name || currentUser.email.split('@')[0] || 'User'}
                   </span>
                   <motion.span 
                     animate={{ rotate: isProfileOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    className="hidden sm:block text-gray-500 dark:text-gray-400"
+                    className="hidden sm:block text-[#3a3a3a] dark:text-[#d1cfbf]"
                   >
                     <ChevronDownIcon className="w-4 h-4" />
                   </motion.span>
@@ -330,22 +330,22 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 <AnimatePresence>
                   {isProfileOpen && (
                     <motion.div 
-                      className="absolute right-0 mt-3 w-64 py-2 bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-gray-100 dark:border-neutral-700 z-50 overflow-hidden"
+                      className="absolute right-0 mt-3 w-64 py-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-md shadow-xl border border-[#d8d6cf] dark:border-[#2a2a2a] z-50 overflow-hidden"
                       initial={{ opacity: 0, y: -20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -20, scale: 0.95, transition: { duration: 0.2 } }}
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     >
-                      <div className="px-4 py-3 border-b border-gray-100 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/80">
+                      <div className="px-4 py-3 border-b border-[#d8d6cf] dark:border-[#2a2a2a] bg-[#e8e6d9] dark:bg-[#2a2a2a]">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-medium text-md shadow-md">
+                          <div className="w-10 h-10 rounded-md bg-[#f76f52] flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] font-medium text-md shadow-sm">
                             {currentUser.name?.charAt(0).toUpperCase() || currentUser.email?.charAt(0).toUpperCase() || 'U'}
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-800 dark:text-white">
+                            <p className="text-sm font-medium text-[#202020] dark:text-[#f2f0e3]">
                               {currentUser.name || 'User'}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                            <p className="text-xs text-[#3a3a3a] dark:text-[#d1cfbf] mt-0.5 truncate">
                               {currentUser.email}
                             </p>
                           </div>
@@ -355,23 +355,23 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                       <div className="py-1">
                         <Link
                           to="/profile"
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700/50"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a]"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          <UserIcon className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400" />
+                          <UserIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                           My Profile
                         </Link>
                         <Link
                           to="/settings"
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700/50"
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a]"
                           onClick={() => setIsProfileOpen(false)}
                         >
-                          <Cog6ToothIcon className="w-4 h-4 mr-3 text-gray-500 dark:text-gray-400" />
+                          <Cog6ToothIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                           Settings
                         </Link>
                       </div>
                       
-                      <div className="border-t border-gray-100 dark:border-neutral-700 py-1 mt-1 bg-gray-50/50 dark:bg-neutral-800/80">
+                      <div className="border-t border-[#d8d6cf] dark:border-[#2a2a2a] py-1 mt-1 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
                         <button 
                           onClick={() => {
                             logout()
@@ -394,7 +394,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               <div className="flex items-center space-x-2 ml-2">
                 <Link to="/login">
                   <motion.button
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-neutral-800 rounded-lg transition-all border border-transparent hover:border-gray-200 dark:hover:border-neutral-700"
+                    className="px-4 py-2 text-sm font-medium text-[#3a3a3a] dark:text-[#d1cfbf] hover:text-[#202020] dark:hover:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] rounded-md transition-all border border-transparent hover:border-[#d8d6cf] dark:hover:border-[#3a3a3a]"
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -403,8 +403,8 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 </Link>
                 <Link to="/register">
                   <motion.button
-                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-lg shadow-md shadow-indigo-500/20 transition-all"
-                    whileHover={{ scale: 1.03, y: -1, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+                    className="px-4 py-2 text-sm font-medium text-[#f2f0e3] bg-[#f76f52] hover:bg-[#e55e41] rounded-md shadow-sm"
+                    whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                   >
                     Register

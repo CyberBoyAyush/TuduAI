@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 import { 
   UserGroupIcon, 
   UserCircleIcon, 
@@ -144,16 +145,16 @@ export default function WorkspaceSettings() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="flex justify-center items-center min-h-screen font-sans">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#f76f52]"></div>
       </div>
     );
   }
 
   if (!workspace) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      <div className="container mx-auto px-4 py-8 font-sans">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md">
           Workspace not found
         </div>
       </div>
@@ -161,53 +162,73 @@ export default function WorkspaceSettings() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8">
+    <motion.div 
+      className="container max-w-4xl mx-auto px-4 py-8 font-sans"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-          <Cog6ToothIcon className="w-7 h-7 mr-2 text-indigo-500" />
+        <h1 className="text-2xl font-bold text-[#202020] dark:text-[#f2f0e3] flex items-center">
+          <Cog6ToothIcon className="w-7 h-7 mr-2 text-[#f76f52]" />
           Workspace Settings
         </h1>
-        <button 
+        <motion.button 
           onClick={() => navigate('/todo')}
-          className="px-4 py-2 text-sm bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+          className="px-4 py-2 text-sm bg-[#f2f0e3] dark:bg-[#202020] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3] rounded-md transition-colors border border-[#d8d6cf] dark:border-[#3a3a3a]"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
           Back to Tasks
-        </button>
+        </motion.button>
       </div>
 
       {error && (
-        <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6 flex items-center">
+        <motion.div 
+          className="bg-[#f2f0e3] dark:bg-[#202020] border-2 border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md mb-6 flex items-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <XMarkIcon className="w-5 h-5 mr-2" />
           <span>{error}</span>
-        </div>
+        </motion.div>
       )}
 
       {success && (
-        <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mb-6 flex items-center">
+        <motion.div 
+          className="bg-[#f2f0e3] dark:bg-[#202020] border-2 border-green-400 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-md mb-6 flex items-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span>{success}</span>
-        </div>
+        </motion.div>
       )}
 
-      <div className="bg-white dark:bg-neutral-800 shadow-lg rounded-xl p-6 mb-8 border border-gray-200 dark:border-neutral-700">
+      <motion.div 
+        className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
         <div className="flex items-center mb-6">
-          <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg mr-4">
-            <PencilSquareIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+            <PencilSquareIcon className="w-6 h-6 text-[#f76f52]" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Workspace Information</h2>
+          <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Information</h2>
         </div>
         
         <form onSubmit={handleUpdateWorkspace}>
           <div className="mb-5">
-            <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2" htmlFor="name">
+            <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2" htmlFor="name">
               Name
             </label>
             <input
               id="name"
               type="text"
-              className="shadow-sm border border-gray-300 dark:border-neutral-600 rounded-lg w-full py-2.5 px-4 text-gray-700 dark:text-gray-200 dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all"
               value={workspaceForm.name}
               onChange={(e) => setWorkspaceForm({...workspaceForm, name: e.target.value})}
               disabled={!isOwner}
@@ -216,13 +237,13 @@ export default function WorkspaceSettings() {
           </div>
           
           <div className="mb-5">
-            <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2" htmlFor="icon">
+            <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2" htmlFor="icon">
               Icon
             </label>
             <input
               id="icon"
               type="text"
-              className="shadow-sm border border-gray-300 dark:border-neutral-600 rounded-lg w-full py-2.5 px-4 text-gray-700 dark:text-gray-200 dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all"
               value={workspaceForm.icon}
               onChange={(e) => setWorkspaceForm({...workspaceForm, icon: e.target.value})}
               disabled={!isOwner}
@@ -230,26 +251,22 @@ export default function WorkspaceSettings() {
           </div>
           
           <div className="mb-6">
-            <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2" htmlFor="color">
+            <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2" htmlFor="color">
               Color Theme
             </label>
             <div className="relative">
               <select
                 id="color"
-                className="shadow-sm border border-gray-300 dark:border-neutral-600 rounded-lg w-full py-2.5 px-4 text-gray-700 dark:text-gray-200 dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none"
+                className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all appearance-none"
                 value={workspaceForm.color}
                 onChange={(e) => setWorkspaceForm({...workspaceForm, color: e.target.value})}
                 disabled={!isOwner}
               >
-                <option value="indigo">Indigo</option>
-                <option value="blue">Blue</option>
-                <option value="green">Green</option>
-                <option value="red">Red</option>
-                <option value="yellow">Yellow</option>
-                <option value="purple">Purple</option>
-                <option value="pink">Pink</option>
+                <option value="black">Black</option>
+                <option value="gray">Gray</option>
+                <option value="white">White</option>
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#202020] dark:text-[#f2f0e3]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
@@ -259,53 +276,66 @@ export default function WorkspaceSettings() {
           
           {isOwner && (
             <div className="flex items-center justify-end">
-              <button
+              <motion.button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-sm"
+                className="bg-[#f76f52] text-[#f2f0e3] font-medium py-2.5 px-6 rounded-md focus:outline-none border border-transparent transition-colors shadow-sm hover:bg-[#e55e41]"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 Update Workspace
-              </button>
+              </motion.button>
             </div>
           )}
         </form>
-      </div>
+      </motion.div>
 
       {/* Collaboration section - only visible to workspace owner */}
       {isOwner && !workspace.isDefault && (
-        <div className="bg-white dark:bg-neutral-800 shadow-lg rounded-xl p-6 mb-8 border border-gray-200 dark:border-neutral-700">
+        <motion.div 
+          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="flex items-center mb-6">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-4">
-              <UserGroupIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+              <UserGroupIcon className="w-6 h-6 text-[#f76f52]" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Workspace Collaboration</h2>
+            <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Collaboration</h2>
           </div>
           
           <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-              <UserCircleIcon className="w-5 h-5 mr-2 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-lg font-medium mb-4 text-[#202020] dark:text-[#f2f0e3] flex items-center">
+              <UserCircleIcon className="w-5 h-5 mr-2" />
               Current Members
             </h3>
             
             {members.length === 0 ? (
-              <div className="bg-gray-50 dark:bg-neutral-850 border border-gray-200 dark:border-neutral-700 rounded-lg p-4 text-gray-600 dark:text-gray-400 text-center">
+              <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-4 text-[#3a3a3a] dark:text-[#d1cfbf] text-center">
                 No members have been added to this workspace.
               </div>
             ) : (
-              <div className="bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 overflow-hidden">
-                <ul className="divide-y divide-gray-200 dark:divide-neutral-700">
+              <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden rounded-md">
+                <ul className="divide-y divide-[#d8d6cf] dark:divide-[#3a3a3a]">
                   {members.map((member, index) => (
-                    <li key={index} className="py-4 px-5 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-neutral-700/50 transition-colors">
+                    <motion.li 
+                      key={index} 
+                      className="py-4 px-5 flex justify-between items-center hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
+                      whileHover={{ backgroundColor: "#e8e6d9", dark: { backgroundColor: "#2a2a2a" } }}
+                    >
                       <div className="flex items-center">
-                        <EnvelopeIcon className="w-5 h-5 text-gray-400 dark:text-gray-500 mr-3" />
-                        <span className="text-gray-800 dark:text-gray-200">{member}</span>
+                        <EnvelopeIcon className="w-5 h-5 mr-3" />
+                        <span className="text-[#202020] dark:text-[#f2f0e3]">{member}</span>
                       </div>
-                      <button
+                      <motion.button
                         onClick={() => handleRemoveMember(member)}
                         className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm py-1 px-3"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         Remove
-                      </button>
-                    </li>
+                      </motion.button>
+                    </motion.li>
                   ))}
                 </ul>
               </div>
@@ -313,32 +343,34 @@ export default function WorkspaceSettings() {
           </div>
           
           <div>
-            <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-gray-200 flex items-center">
-              <PlusCircleIcon className="w-5 h-5 mr-2 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-lg font-medium mb-4 text-[#202020] dark:text-[#f2f0e3] flex items-center">
+              <PlusCircleIcon className="w-5 h-5 mr-2" />
               Add New Member
             </h3>
-            <div className="bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 p-5">
+            <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-5">
               <form onSubmit={handleAddMember}>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-grow">
-                    <EnvelopeIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <EnvelopeIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
                     <input
                       type="email"
-                      className="w-full py-3 pl-10 pr-4 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-neutral-700 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full py-3 pl-10 pr-4 text-[#202020] dark:text-[#f2f0e3] bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] focus:outline-none focus:ring-1 focus:ring-[#f76f52]"
                       placeholder="Enter email address"
                       value={newMemberEmail}
                       onChange={(e) => setNewMemberEmail(e.target.value)}
                       required
                     />
                   </div>
-                  <button
+                  <motion.button
                     type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors shadow-sm whitespace-nowrap"
+                    className="bg-[#f76f52] text-[#f2f0e3] font-medium py-3 px-6 rounded-md border border-transparent transition-colors shadow-sm hover:bg-[#e55e41] whitespace-nowrap"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                   >
                     Add Member
-                  </button>
+                  </motion.button>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 flex items-center">
+                <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] mt-4 flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -347,39 +379,44 @@ export default function WorkspaceSettings() {
               </form>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
       
       {/* If user is not the owner but a member */}
       {!isOwner && (
-        <div className="bg-white dark:bg-neutral-800 shadow-lg rounded-xl p-6 border border-gray-200 dark:border-neutral-700">
+        <motion.div 
+          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <div className="flex items-center mb-6">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-4">
-              <UserGroupIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+              <UserGroupIcon className="w-6 h-6 text-[#f76f52]" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Workspace Collaboration</h2>
+            <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Collaboration</h2>
           </div>
           
-          <div className="bg-gray-50 dark:bg-neutral-850 border border-gray-200 dark:border-neutral-700 rounded-lg p-5">
-            <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-5">
+            <div className="flex items-center text-[#3a3a3a] dark:text-[#d1cfbf] mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>You are a member of this workspace. Only the workspace owner can manage members.</p>
             </div>
             
             {owner && (
-              <div className="flex items-center mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                <UserCircleIcon className="w-5 h-5 mr-2 text-blue-500 dark:text-blue-400" />
+              <div className="flex items-center mt-4 p-3 bg-[#f2f0e3] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                <UserCircleIcon className="w-5 h-5 mr-2" />
                 <div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Workspace owner:</span>
-                  <p className="text-gray-800 dark:text-gray-200 font-medium">{owner}</p>
+                  <span className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf]">Workspace owner:</span>
+                  <p className="text-[#202020] dark:text-[#f2f0e3] font-medium">{owner}</p>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
-} 
+}

@@ -160,7 +160,7 @@ export default function TimeSuggestions({ onSelect }) {
           <motion.button
             key={index}
             onClick={() => onSelect(suggestion.value)}
-            className="px-3 py-2 bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium"
+            className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -178,7 +178,7 @@ export default function TimeSuggestions({ onSelect }) {
             nextWeek.setHours(9, 0, 0, 0)
             onSelect(nextWeek.toISOString())
           }}
-          className="px-3 py-2 bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium"
+          className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -193,7 +193,7 @@ export default function TimeSuggestions({ onSelect }) {
             twoWeeks.setHours(9, 0, 0, 0)
             onSelect(twoWeeks.toISOString())
           }}
-          className="px-3 py-2 bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium"
+          className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -202,34 +202,21 @@ export default function TimeSuggestions({ onSelect }) {
         
         <motion.button
           onClick={() => {
-            // Set to next month on the 1st at 9 AM
-            const nextMonth = new Date(today)
-            nextMonth.setMonth(nextMonth.getMonth() + 1)
-            nextMonth.setDate(1)
-            nextMonth.setHours(9, 0, 0, 0)
-            onSelect(nextMonth.toISOString())
+            // Set to end of month at 9 AM
+            const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+            endOfMonth.setHours(9, 0, 0, 0)
+            onSelect(endOfMonth.toISOString())
           }}
-          className="px-3 py-2 bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium"
+          className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          Next month
+          End of month
         </motion.button>
         
         <motion.button
-          onClick={() => {
-            setShowCustomInput(true)
-            setProcessingMessage('')
-            setProcessingError('')
-            
-            // Focus the input after rendering
-            setTimeout(() => {
-              if (inputRef.current) {
-                inputRef.current.focus()
-              }
-            }, 100)
-          }}
-          className="px-3 py-2 bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300 rounded-md text-sm font-medium"
+          onClick={() => setShowCustomInput(!showCustomInput)}
+          className="px-3 py-2 bg-primary-500 text-white rounded-md text-sm font-medium border border-transparent hover:bg-primary-600"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -243,189 +230,90 @@ export default function TimeSuggestions({ onSelect }) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mt-4 bg-gray-50 dark:bg-neutral-800 p-4 rounded-lg border border-gray-200 dark:border-neutral-700"
+            className="overflow-hidden"
           >
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault()
-                
-                if (!customDateInput.trim()) {
-                  setProcessingError('Please enter a date/time')
-                  return
-                }
-                
-                setIsProcessing(true)
-                setProcessingMessage('Processing your date...')
-                setProcessingError('')
-                
-                try {
-                  // Create a mock task with the entered date/time for AI parsing
-                  const mockTaskInput = `Task ${customDateInput.trim()}`
-                  console.log(`Parsing custom date entry: "${mockTaskInput}"`)
-                  
-                  // Check for common time patterns that might need disambiguation
-                  const pmTimePattern = /\b(\d{1,2})\s*(?:pm|p\.m\.)\b/i;
-                  const amTimePattern = /\b(\d{1,2})\s*(?:am|a\.m\.)\b/i;
-                  const hasExplicitPm = pmTimePattern.test(customDateInput.toLowerCase());
-                  const hasExplicitAm = amTimePattern.test(customDateInput.toLowerCase());
-                  
-                  // For simple hour numbers, ensure PM is properly indicated for afternoon/evening hours
-                  let enhancedInput = customDateInput.trim();
-                  if (!hasExplicitPm && !hasExplicitAm) {
-                    const hourMatch = /\b(\d{1,2})\b/.exec(customDateInput);
-                    if (hourMatch) {
-                      const hour = parseInt(hourMatch[1]);
-                      // For hours that are likely PM (5-11), add PM if not specified
-                      if (hour >= 5 && hour <= 11 && 
-                          (customDateInput.toLowerCase().includes('evening') || 
-                           customDateInput.toLowerCase().includes('night') ||
-                           customDateInput.toLowerCase().includes('afternoon') ||
-                           customDateInput.toLowerCase().includes('dinner'))) {
-                        enhancedInput = customDateInput.replace(
-                          new RegExp(`\\b${hour}\\b`), 
-                          `${hour}pm`
-                        );
-                        console.log(`Enhanced input to clarify PM: "${enhancedInput}"`);
-                      }
-                    }
-                  }
-                  
-                  // Parse the natural language input
-                  parseTaskInput(`Task ${enhancedInput}`)
-                    .then(result => {
-                      if (result.dueDate) {
-                        console.log(`Successfully parsed date: ${result.dueDate}`)
-                        
-                        // Validate that the parsed date makes sense
-                        const parsedDate = new Date(result.dueDate);
-                        const now = new Date();
-                        
-                        // If it parsed to an AM time but likely should be PM
-                        const hour = parsedDate.getHours();
-                        const hasPmIndicator = customDateInput.toLowerCase().match(/\b(?:pm|p\.m\.|evening|night|dinner|afternoon)\b/);
-                        
-                        // If it's early morning (12am-7am) but no explicit morning/AM indicator
-                        if (hour >= 0 && hour < 7 && hasPmIndicator && 
-                            !customDateInput.toLowerCase().match(/\b(?:am|a\.m\.|morning|dawn)\b/)) {
-                          console.log(`Fixing likely incorrect AM time: ${hour}am -> ${hour+12}pm`);
-                          parsedDate.setHours(hour + 12);
-                          result.dueDate = parsedDate.toISOString();
-                        }
-                        
-                        // Format the date for display
-                        const formattedDate = parsedDate.toLocaleString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })
-                        
-                        setProcessingMessage(`Date set to: ${formattedDate}`)
-                        
-                        // Wait a moment to show success message before closing
-                        setTimeout(() => {
-                          // Pass the parsed date to the parent component
-                          onSelect(result.dueDate)
-                          setShowCustomInput(false)
-                          setCustomDateInput('')
-                          setIsProcessing(false)
-                          setProcessingMessage('')
-                        }, 1500)
-                      } else {
-                        setProcessingError("I couldn't understand that date/time. Please try again with a clearer format.")
-                        setIsProcessing(false)
-                        console.error("Failed to parse date from input:", customDateInput)
-                      }
-                    })
-                    .catch(error => {
-                      console.error("Error parsing date:", error)
-                      setProcessingError("There was an error processing your date. Please try again.")
-                      setIsProcessing(false)
-                    })
-                } catch (error) {
-                  console.error("Error in custom date processing:", error)
-                  setProcessingError("There was an error processing your date. Please try again.")
-                  setIsProcessing(false)
-                }
-              }}
-              className="space-y-3"
-            >
-              <div>
-                <label 
-                  htmlFor="custom-date-input" 
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Enter a date/time in natural language:
+            <div className="bg-primary-100 p-4 rounded-md border border-primary-300">
+              <div className="flex flex-col space-y-3">
+                <label htmlFor="custom-date" className="text-sm font-medium text-primary-700">
+                  Enter a date or description:
                 </label>
-                <input
-                  ref={inputRef}
-                  id="custom-date-input"
-                  type="text"
-                  value={customDateInput}
-                  onChange={(e) => setCustomDateInput(e.target.value)}
-                  placeholder="e.g., 'tomorrow at 7am', 'friday at 3pm'"
-                  className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-                  disabled={isProcessing}
-                />
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCustomInput(false)
-                    setCustomDateInput('')
-                    setProcessingMessage('')
-                    setProcessingError('')
-                  }}
-                  className="px-3 py-2 bg-gray-100 dark:bg-neutral-700 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium"
-                  disabled={isProcessing}
-                >
-                  Cancel
-                </button>
                 
-                <button
-                  type="submit"
-                  className="px-3 py-2 bg-primary-500 text-white rounded-md text-sm font-medium disabled:opacity-50"
-                  disabled={isProcessing || !customDateInput.trim()}
-                >
-                  {isProcessing ? 'Processing...' : 'Set Date'}
-                </button>
-              </div>
-              
-              {processingMessage && (
-                <div className="p-2 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-md text-sm">
-                  {processingMessage}
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    id="custom-date"
+                    type="text"
+                    value={customDateInput}
+                    onChange={(e) => setCustomDateInput(e.target.value)}
+                    placeholder="next Monday at 3pm, May 15th at noon, etc."
+                    className="w-full p-2 border border-primary-300 rounded-md bg-primary-50 text-primary-700 placeholder-primary-800/60"
+                    autoFocus
+                  />
                 </div>
-              )}
-              
-              {processingError && (
-                <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-md text-sm">
-                  {processingError}
-                </div>
-              )}
-              
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Try phrases like "7am tomorrow", "next friday at 3pm", "tomorrow 6pm", or "in two days at noon"
-              </div>
-              
-              {/* Clickable example suggestions */}
-              <div className="mt-2 flex flex-wrap gap-1">
-                {['tomorrow 6pm', 'friday 3pm', 'next week', 'tonight 8pm'].map((example) => (
-                  <button
-                    key={example}
-                    type="button"
-                    onClick={() => setCustomDateInput(example)}
-                    className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                
+                <div className="flex justify-between space-x-2">
+                  <motion.button
+                    onClick={() => setShowCustomInput(false)}
+                    className="px-3 py-2 bg-primary-50 text-primary-700 rounded-md text-sm border border-primary-300"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Cancel
+                  </motion.button>
+                  
+                  <motion.button
+                    onClick={async () => {
+                      if (!customDateInput.trim()) return;
+                      
+                      setIsProcessing(true);
+                      setProcessingMessage('Processing your date...');
+                      setProcessingError('');
+                      
+                      try {
+                        const result = await parseTaskInput(`Task due ${customDateInput.trim()}`);
+                        
+                        if (result.dueDate) {
+                          onSelect(result.dueDate);
+                          setShowCustomInput(false);
+                          setCustomDateInput('');
+                        } else {
+                          setProcessingError('Could not understand the date. Please try again with a clearer format.');
+                        }
+                      } catch (error) {
+                        console.error('Error parsing custom date:', error);
+                        setProcessingError('Error processing date. Please try again.');
+                      } finally {
+                        setIsProcessing(false);
+                        setProcessingMessage('');
+                      }
+                    }}
+                    className={`px-3 py-2 bg-primary-500 text-white rounded-md text-sm font-medium border border-transparent hover:bg-primary-600 flex items-center justify-center min-w-[80px] ${
+                      isProcessing ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                    whileHover={{ scale: isProcessing ? 1 : 1.05 }}
+                    whileTap={{ scale: isProcessing ? 1 : 0.95 }}
                     disabled={isProcessing}
                   >
-                    {example}
-                  </button>
-                ))}
+                    {isProcessing ? (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      'Set Date'
+                    )}
+                  </motion.button>
+                </div>
+                
+                {processingMessage && (
+                  <p className="text-xs text-primary-800">{processingMessage}</p>
+                )}
+                
+                {processingError && (
+                  <p className="text-xs text-red-500">{processingError}</p>
+                )}
               </div>
-            </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

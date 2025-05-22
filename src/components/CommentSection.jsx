@@ -194,8 +194,8 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
             <span className="font-medium text-gray-800 dark:text-gray-200">Help</span>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Available commands:
-              <br />• <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!remindme</span> or <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!rmd</span> - Set a reminder
-              <br />• <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!help</span> - Show this help message
+              <br />• <span className="font-sans text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!remindme</span> or <span className="font-sans text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!rmd</span> - Set a reminder
+              <br />• <span className="font-sans text-xs bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">!help</span> - Show this help message
             </p>
           </div>
         </div>
@@ -229,26 +229,26 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
   }
   
   return (
-    <div className="p-4 space-y-4 bg-gradient-to-b from-white to-gray-50 dark:from-neutral-800 dark:to-neutral-800/80 transition-all">
+    <div className="p-4 space-y-4 bg-primary-50 transition-all font-sans">
       {/* Comment section header */}
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-medium text-gray-800 dark:text-gray-200 flex items-center">
-          <ChatBubbleLeftEllipsisIcon className="w-4 h-4 mr-2 text-indigo-500 dark:text-indigo-400" />
-          Comments {parsedComments.length > 0 && <span className="ml-1.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-full">{parsedComments.length}</span>}
+        <h3 className="font-medium text-primary-700 flex items-center">
+          <ChatBubbleLeftEllipsisIcon className="w-4 h-4 mr-2" />
+          Comments {parsedComments.length > 0 && <span className="ml-1.5 text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">{parsedComments.length}</span>}
         </h3>
       </div>
       
       {/* Comments list */}
-      <div className="space-y-4 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent pr-1 pb-1">
+      <div className="space-y-4 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-primary-300 scrollbar-track-transparent pr-1 pb-1">
         {parsedComments.length === 0 ? (
           <motion.div 
-            className="flex flex-col items-center justify-center p-4 text-center space-y-2 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-neutral-800/50"
+            className="flex flex-col items-center justify-center p-4 text-center space-y-2 rounded-md border border-dashed border-primary-300 bg-primary-100"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <FireIcon className="w-10 h-10 text-gray-400 dark:text-gray-500 opacity-75" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <FireIcon className="w-10 h-10 text-primary-800 opacity-75" />
+            <p className="text-sm text-primary-800">
               No comments yet. Start the conversation!
             </p>
           </motion.div>
@@ -267,7 +267,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                 {/* User avatar */}
                 <motion.div 
                   whileHover={{ scale: 1.1 }}
-                  className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColors.from} ${avatarColors.to} ${avatarColors.text} flex items-center justify-center font-medium text-sm shrink-0 shadow-sm ring-2 ring-white dark:ring-neutral-800`}
+                  className="w-8 h-8 rounded-md bg-primary-700 text-primary-50 flex items-center justify-center font-medium text-sm shrink-0 border border-primary-300"
                 >
                   {comment.user.charAt(0).toUpperCase()}
                 </motion.div>
@@ -275,22 +275,15 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                 {/* Comment content */}
                 <div className={`flex-grow ml-3 max-w-[90%]`}>
                   <motion.div 
-                    className={`bg-white dark:bg-neutral-800 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-700 ${
-                      index % 2 === 0 
-                        ? 'rounded-tl-none' 
-                        : 'rounded-tl-none'
-                    }`}
-                    whileHover={{ 
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                      y: -2
-                    }}
+                    className="bg-primary-50 p-3 rounded-md shadow-sm border border-primary-300"
+                    whileHover={{ y: -2 }}
                     transition={{ duration: 0.2 }}
                   >
                     <div className="flex justify-between items-start mb-1.5">
-                      <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                      <span className="font-medium text-sm text-primary-700">
                         {comment.user}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-700/50 rounded-full px-2 py-0.5">
+                      <span className="text-xs text-primary-800 bg-primary-100 rounded-full px-2 py-0.5">
                         {formatRelativeTime(comment.time)}
                       </span>
                     </div>
@@ -301,7 +294,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                   {/* Delete action */}
                   <motion.button
                     onClick={() => handleDeleteComment(comment.id)}
-                    className="mt-1 ml-1 text-xs text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 flex items-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200"
+                    className="mt-1 ml-1 text-xs text-primary-800 hover:text-red-500 flex items-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -318,12 +311,12 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
       
       {/* Add comment form */}
       <form onSubmit={handleAddComment} className="mt-4">
-        <div className="flex items-center space-x-3 group bg-white dark:bg-neutral-800 p-2 rounded-full shadow-sm border border-gray-200 dark:border-neutral-700 focus-within:shadow-md focus-within:border-indigo-400 dark:focus-within:border-indigo-600 transition-all">
+        <div className="flex items-center space-x-3 group bg-primary-50 transition-all">
           {/* User avatar */}
           <motion.div 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-medium text-sm shrink-0 shadow-sm"
+            className="w-8 h-8 rounded-md bg-primary-700 text-primary-50 flex items-center justify-center font-medium text-sm shrink-0 border border-primary-300"
           >
             {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
           </motion.div>
@@ -336,11 +329,11 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Add a comment or use !help"
-              className="w-full py-1.5 px-2 rounded-full bg-transparent border-none text-gray-800 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-0 focus:outline-none text-sm"
+              className="w-full py-1.5 px-2 rounded-md bg-transparent border-none text-primary-700 placeholder-primary-800 focus:ring-0 focus:outline-none text-sm font-sans"
               disabled={reminderProcessing}
             />
             {reminderError && (
-              <div className="absolute -bottom-6 left-0 text-xs text-red-500 flex items-center bg-white dark:bg-neutral-800 p-1 rounded shadow-sm">
+              <div className="absolute -bottom-6 left-0 text-xs text-red-500 flex items-center bg-primary-100 p-1 rounded-md shadow-sm">
                 <ExclamationCircleIcon className="w-3 h-3 mr-1" />
                 {reminderError}
               </div>
@@ -350,10 +343,10 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
           {/* Action buttons */}
           <motion.button
             type="submit"
-            className={`p-2 rounded-full transition-all shadow-sm ${
+            className={`p-2 rounded-md transition-all border ${
               !newComment.trim() || reminderProcessing
-              ? 'bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-gray-400'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              ? 'bg-primary-100 text-primary-700 border-primary-300'
+              : 'bg-primary-700 text-primary-50 hover:bg-primary-800 border-primary-600'
             }`}
             whileHover={{ scale: !newComment.trim() || reminderProcessing ? 1 : 1.05 }}
             whileTap={{ scale: !newComment.trim() || reminderProcessing ? 1 : 0.95 }}
@@ -375,7 +368,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm font-sans"
             onClick={() => cancelDeleteComment()}
           >
             <motion.div 
@@ -383,7 +376,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="bg-white dark:bg-neutral-800 rounded-lg p-5 w-80 shadow-xl flex flex-col border border-gray-200 dark:border-neutral-700"
+              className="bg-primary-100 rounded-md p-5 w-80 shadow-md flex flex-col border border-primary-300"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center mb-4">
@@ -391,12 +384,12 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                   initial={{ rotate: 0 }}
                   animate={{ rotate: [0, -10, 10, -5, 5, 0] }}
                   transition={{ duration: 0.5 }}
-                  className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-3 shadow-inner"
+                  className="mx-auto w-12 h-12 rounded-md bg-primary-50 flex items-center justify-center mb-3 border border-primary-300"
                 >
-                  <TrashIcon className="w-6 h-6 text-red-500 dark:text-red-400" />
+                  <TrashIcon className="w-6 h-6 text-primary-700" />
                 </motion.div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">Delete Comment</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <h3 className="text-lg font-semibold text-primary-700 mb-1">Delete Comment</h3>
+                <p className="text-sm text-primary-800">
                   Are you sure you want to delete this comment?
                 </p>
               </div>
@@ -406,7 +399,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => cancelDeleteComment()}
-                  className="flex-1 py-2.5 px-4 bg-gray-200 dark:bg-neutral-700 rounded-md text-gray-800 dark:text-gray-300 font-medium hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors shadow-sm"
+                  className="flex-1 py-2.5 px-4 bg-primary-100 text-primary-700 font-medium hover:bg-primary-200 transition-colors border border-primary-300"
                 >
                   Cancel
                 </motion.button>
@@ -414,7 +407,7 @@ export default function CommentSection({ taskId, taskTitle, comments, onAddComme
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => confirmDeleteComment()}
-                  className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 rounded-md text-white font-medium transition-colors shadow-sm"
+                  className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 rounded-md text-primary-50 font-medium transition-colors border border-transparent"
                 >
                   Delete
                 </motion.button>

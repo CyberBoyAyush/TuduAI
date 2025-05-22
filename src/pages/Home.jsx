@@ -11,7 +11,9 @@ import {
   BoltIcon, 
   ClockIcon,
   ArrowRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  ClipboardDocumentListIcon,
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline'
 
 export default function Home() {
@@ -61,123 +63,179 @@ export default function Home() {
   }
   
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 font-sans">
       {/* Hero section */}
       <motion.section 
-        className="text-center py-16 md:py-24 relative"
+        className="flex flex-col items-center justify-center min-h-[85vh] text-center py-8 md:py-0 relative"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Abstract background shape */}
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-4/5 h-4/5 bg-gradient-to-br from-primary-100 to-violet-100 dark:from-primary-900/20 dark:to-violet-900/10 rounded-full blur-3xl opacity-40 dark:opacity-30 -z-10"></div>
+        {/* Minimal background element */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 bg-[#f2f0e3]/70 dark:bg-[#202020]/70 rounded-full blur-3xl opacity-60 dark:opacity-40 -z-10"></div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full max-w-5xl mx-auto"
+          className="w-full max-w-3xl mx-auto flex flex-col items-center justify-center mt-[-5vh]"
         >
-          {/* Logo container with animation */}
+          {/* Logo container with minimalist design */}
           <motion.div 
-            className="relative mb-8"
+            className="relative mb-3"
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             transition={{ 
-              duration: 0.5,
+              duration: 0.6,
               ease: "easeOut"
             }}
           >
             <div className="flex items-center justify-center">
-              <div className="relative">
-                <SparklesIcon className="w-14 h-14 md:w-16 md:h-16 text-primary-500 absolute -top-2 -left-3 transform -rotate-12" />
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-violet-600 flex items-center justify-center shadow-lg shadow-primary-500/20 mb-4">
+              <motion.div 
+                className="relative"
+                whileHover={{ rotate: [0, -5, 5, -5, 0], transition: { duration: 0.5 } }}
+              >
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-[#f76f52] dark:bg-[#f76f52] flex items-center justify-center shadow-md mb-0 relative">
                   <motion.span 
-                    className="text-white text-3xl md:text-4xl font-extrabold"
+                    className="text-[#f2f0e3] dark:text-[#202020] text-3xl md:text-4xl font-bold"
                     animate={{ 
-                      opacity: [1, 0.9, 1],
-                      scale: [1, 1.02, 1]
+                      opacity: [1, 0.8, 1],
+                      scale: [1, 1.05, 1]
                     }}
                     transition={{
-                      duration: 3,
+                      duration: 2.5,
                       repeat: Infinity,
                       repeatType: "reverse"
                     }}
                   >
                     T
                   </motion.span>
+                  
+                  {/* Added productivity icons */}
+                  <motion.div 
+                    className="absolute -top-2 -right-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 1.2, duration: 0.5, type: "spring" }}
+                  >
+                    <ClipboardDocumentListIcon className="w-4 h-4 md:w-5 md:h-5 text-[#f76f52]" />
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="absolute -bottom-2 -left-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
+                    initial={{ scale: 0, rotate: 20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 1.5, duration: 0.5, type: "spring" }}
+                  >
+                    <CheckBadgeIcon className="w-4 h-4 md:w-5 md:h-5 text-[#f76f52]" />
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
-            <span className="bg-gradient-to-r from-primary-500 via-primary-400 to-violet-600 bg-clip-text text-transparent drop-shadow-sm">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#202020] dark:text-[#f2f0e3] mb-2 tracking-tighter">
+            <motion.span
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+            >
               TuduAI
-            </span>
+            </motion.span>
           </h1>
           
-          <p className="text-xl md:text-2xl font-medium text-gray-800 dark:text-gray-200 mb-6">
-            Plan less. Do more.
+          <p className="text-xl md:text-2xl font-medium text-[#202020] dark:text-[#f2f0e3] mb-2 tracking-tight">
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.6 }}
+            >
+              Plan less. <span className="text-[#f76f52]">Do more.</span>
+            </motion.span>
           </p>
           
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10">
+          <motion.p 
+            className="text-sm md:text-base text-[#3a3a3a] dark:text-[#d1cfbf] max-w-xl mx-auto mb-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.8 }}
+          >
             The intelligent task manager that understands your language and transforms how you organize your life.
-          </p>
+          </motion.p>
           
-          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-1">
             <Link to="/register">
               <motion.button
-                className="px-8 py-3.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl shadow-lg shadow-primary-500/20 flex items-center justify-center w-full sm:w-auto"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                className="px-6 py-2.5 bg-[#f76f52] text-[#f2f0e3] dark:text-[#202020] font-medium rounded-md flex items-center justify-center w-full sm:w-auto border border-transparent hover:bg-[#e55e41] dark:hover:bg-[#ff8b73] transition-colors"
+                whileHover={{ scale: 1.02, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}
+                whileTap={{ scale: 0.98 }}
               >
                 <span>Start for free</span>
-                <ArrowRightIcon className="w-5 h-5 ml-2" />
+                <ArrowRightIcon className="w-4 h-4 ml-2" />
               </motion.button>
             </Link>
             
             <Link to="/login">
               <motion.button
-                className="px-8 py-3.5 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-800 dark:text-gray-200 font-medium rounded-xl shadow-md border border-gray-100 dark:border-neutral-700"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                className="px-6 py-2.5 bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] font-medium rounded-md border border-[#202020] dark:border-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
+                whileHover={{ scale: 1.02, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}
+                whileTap={{ scale: 0.98 }}
               >
                 Login
               </motion.button>
             </Link>
           </div>
+          
+          {/* Added decorative elements */}
+          <motion.div
+            className="absolute -bottom-16 -right-16 w-32 h-32 md:w-40 md:h-40 opacity-20 -z-10"
+            initial={{ opacity: 0, rotate: -10 }}
+            animate={{ opacity: 0.2, rotate: 0 }}
+            transition={{ duration: 1, delay: 1 }}
+          >
+            <SparklesIcon className="w-full h-full text-[#f76f52]" />
+          </motion.div>
+          
+          <motion.div
+            className="absolute -bottom-16 -left-16 w-32 h-32 md:w-40 md:h-40 opacity-20 -z-10"
+            initial={{ opacity: 0, rotate: 10 }}
+            animate={{ opacity: 0.2, rotate: 0 }}
+            transition={{ duration: 1, delay: 1.3 }}
+          >
+            <CheckCircleIcon className="w-full h-full text-[#202020] dark:text-[#f2f0e3]" />
+          </motion.div>
         </motion.div>
       </motion.section>
       
       {/* Features section */}
       <motion.section 
-        className="py-16 my-10"
+        className="py-12 my-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         <motion.h2 
-          className="text-2xl md:text-3xl font-bold text-center mb-16 text-gray-900 dark:text-white"
+          className="text-xl md:text-2xl font-bold text-center mb-12 text-[#202020] dark:text-[#f2f0e3] tracking-tight"
           variants={itemVariants}
         >
-          Simplicity meets <span className="text-primary-500">intelligence</span>
+          Simplicity meets <span className="border-b-2 border-[#f76f52] pb-1">intelligence</span>
         </motion.h2>
         
-        <div className="grid md:grid-cols-3 gap-8 px-4">
+        <div className="grid md:grid-cols-3 gap-6 px-4">
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              className="p-6 rounded-2xl transition-all hover:shadow-md dark:hover:shadow-neutral-800/40 hover:bg-white dark:hover:bg-neutral-800/50 border border-transparent hover:border-gray-100 dark:hover:border-neutral-700"
+              className="p-5 rounded-md transition-all hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#2a2a2a] hover:shadow-md"
               variants={itemVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
             >
-              <div className="w-14 h-14 bg-primary-50 dark:bg-primary-900/20 rounded-xl flex items-center justify-center text-primary-500 dark:text-primary-400 mb-5">
+              <div className="w-9 h-9 bg-[#f2f0e3] dark:bg-[#2a2a2a] rounded-md flex items-center justify-center text-[#f76f52] mb-4">
                 {feature.icon}
               </div>
-              <h3 className="font-semibold text-xl mb-3 text-gray-800 dark:text-gray-100">
+              <h3 className="font-semibold text-base mb-2 text-[#202020] dark:text-[#f2f0e3]">
                 {feature.title}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="text-[#3a3a3a] dark:text-[#d1cfbf] leading-relaxed text-sm">
                 {feature.description}
               </p>
             </motion.div>
@@ -187,32 +245,43 @@ export default function Home() {
       
       {/* Call to action */}
       <motion.section 
-        className="py-20 text-center relative overflow-hidden rounded-2xl my-10 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900/80 dark:to-neutral-800/80 border border-gray-100 dark:border-neutral-700"
+        className="py-14 text-center relative overflow-hidden rounded-md my-12 bg-[#e8e6d9] dark:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#3a3a3a]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
       >
-        <div className="absolute -right-10 top-0 w-40 h-40 bg-primary-100 dark:bg-primary-900/20 rounded-full blur-3xl opacity-60 dark:opacity-30"></div>
-        <div className="absolute -left-10 bottom-0 w-40 h-40 bg-violet-100 dark:bg-violet-900/20 rounded-full blur-3xl opacity-60 dark:opacity-30"></div>
-        
-        <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-900 dark:text-white relative z-10">
-          Transform your productivity today
-        </h2>
-        
-        <p className="text-gray-600 dark:text-gray-300 max-w-lg mx-auto mb-8 relative z-10">
-          Join thousands who are getting more done with less mental overhead
-        </p>
-        
-        <Link to="/register">
-          <motion.button
-            className="group px-8 py-3.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl shadow-lg shadow-primary-500/20 flex items-center mx-auto"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-bold mb-4 text-[#202020] dark:text-[#f2f0e3] tracking-tight relative z-10">
+            Transform your productivity today
+          </h2>
+          
+          <p className="text-[#3a3a3a] dark:text-[#d1cfbf] mb-6 relative z-10 text-sm">
+            Join thousands who are getting more done with less mental overhead
+          </p>
+          
+          <Link to="/register">
+            <motion.button
+              className="group px-6 py-2.5 bg-[#f76f52] text-[#f2f0e3] dark:text-[#202020] font-medium rounded-md flex items-center mx-auto hover:bg-[#e55e41] dark:hover:bg-[#ff8b73] transition-colors"
+              whileHover={{ scale: 1.02, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span>Get Started — It's Free</span>
+              <ArrowRightIcon className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+          </Link>
+          
+          {/* Added decorative element */}
+          <motion.div 
+            className="absolute -bottom-8 -right-8 w-20 h-20 opacity-10" 
+            animate={{ 
+              rotate: [0, 360],
+              scale: [0.9, 1.1, 0.9],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           >
-            <span>Get Started — It's Free</span>
-            <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
-        </Link>
+            <BoltIcon className="w-full h-full text-[#f76f52]" />
+          </motion.div>
+        </div>
       </motion.section>
     </div>
   )
