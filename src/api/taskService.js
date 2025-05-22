@@ -1,4 +1,5 @@
-import { databases, databaseId, tasksCollectionId, ID, Query } from './appwrite';
+import { databases, databaseId, tasksCollectionId, workspacesCollectionId, ID, Query } from './appwrite';
+import { account } from './appwrite';
 
 // Add caching for tasks to prevent duplicate API calls
 const taskCache = {
@@ -53,19 +54,62 @@ export const taskService = {
         return cachedData.data;
       }
       
-      const queries = [
-        Query.equal('userId', userId)
-      ];
-      
-      if (workspaceId) {
-        queries.push(Query.equal('workspaceId', workspaceId));
+      // Skip further processing if workspaceId is invalid
+      if (!workspaceId) {
+        return [];
       }
       
-      const response = await databases.listDocuments(
-        databaseId,
-        tasksCollectionId,
-        queries
-      );
+      let response;
+      let isSharedWorkspace = false;
+      
+      // Only check for shared workspace if we have a valid workspaceId
+      // (not 'default' or empty string)
+      if (workspaceId && workspaceId !== 'default') {
+        try {
+          const workspace = await databases.getDocument(
+            databaseId,
+            workspacesCollectionId,
+            workspaceId
+          );
+          
+          // Get current user's email for member check
+          const user = await account.get();
+          const userEmail = user.email;
+          
+          // Check if this is a shared workspace (either user is owner or member)
+          isSharedWorkspace = workspace.members && workspace.members.length > 0;
+          
+        } catch (error) {
+          console.error('Error checking workspace:', error);
+          // If workspace doesn't exist or other error, return empty array
+          return [];
+        }
+      }
+      
+      // For shared workspaces, get ALL tasks by workspaceId only
+      // This allows all members to see all tasks in the workspace
+      if (isSharedWorkspace) {
+        response = await databases.listDocuments(
+          databaseId,
+          tasksCollectionId,
+          [Query.equal('workspaceId', workspaceId)]
+        );
+      } else {
+        // For user's own workspaces, get only their tasks
+        const queries = [
+          Query.equal('userId', userId)
+        ];
+        
+        if (workspaceId && workspaceId !== 'default') {
+          queries.push(Query.equal('workspaceId', workspaceId));
+        }
+        
+        response = await databases.listDocuments(
+          databaseId,
+          tasksCollectionId,
+          queries
+        );
+      }
       
       // Update cache
       taskCache.byWorkspace.set(cacheKey, {
@@ -83,6 +127,29 @@ export const taskService = {
   // Create a new task
   async createTask(title, dueDate, urgency, workspaceId, userId) {
     try {
+      // Skip if workspaceId is invalid
+      if (!workspaceId || workspaceId === 'default') {
+        throw new Error('Valid workspaceId is required');
+      }
+      
+      let isSharedWorkspace = false;
+      let workspace = null;
+      
+      try {
+        // Get workspace details
+        workspace = await databases.getDocument(
+          databaseId,
+          workspacesCollectionId,
+          workspaceId
+        );
+        
+        // Check if this is a shared workspace (has members)
+        isSharedWorkspace = workspace.members && workspace.members.length > 0;
+      } catch (error) {
+        console.error('Error checking workspace for task creation:', error);
+        throw new Error('Could not verify workspace');
+      }
+      
       const now = new Date().toISOString();
       // Generate a string ID
       const docId = crypto.randomUUID();
@@ -109,6 +176,18 @@ export const taskService = {
       // Clear related cache
       cacheHelpers.clearCache(userId, workspaceId);
       
+      // If this is a shared workspace, clear all caches to ensure everyone sees the new task
+      if (isSharedWorkspace) {
+        // Clear workspace owner's cache if different from task creator
+        if (workspace.userId && workspace.userId !== userId) {
+          cacheHelpers.clearCache(workspace.userId, workspaceId);
+        }
+        
+        // Clear all caches to ensure all members see the updates
+        // This is less efficient but ensures everyone sees the new task
+        cacheHelpers.clearAllCaches();
+      }
+      
       return newTask;
     } catch (error) {
       console.error('Error creating task:', error);
@@ -124,7 +203,8 @@ export const taskService = {
       try {
         task = await databases.getDocument(databaseId, tasksCollectionId, id);
       } catch (e) {
-        // If we can't get the task, we'll just clear all caches later
+        console.error('Error getting task for update:', e);
+        throw new Error('Task not found');
       }
       
       // Filter out any fields that don't match the schema
@@ -146,11 +226,34 @@ export const taskService = {
         validUpdates
       );
       
-      // Clear cache
-      if (task) {
+      // Clear cache for the task owner
+      if (task.userId) {
         cacheHelpers.clearCache(task.userId, task.workspaceId);
-      } else {
-        cacheHelpers.clearAllCaches();
+      }
+      
+      // Check if this is a shared workspace and clear cache for all members
+      if (task.workspaceId && task.workspaceId !== 'default') {
+        try {
+          const workspace = await databases.getDocument(
+            databaseId,
+            workspacesCollectionId,
+            task.workspaceId
+          );
+          
+          // If it's a shared workspace with members
+          if (workspace.members && workspace.members.length > 0) {
+            // Clear cache for workspace owner if different from task creator
+            if (workspace.userId && workspace.userId !== task.userId) {
+              cacheHelpers.clearCache(workspace.userId, task.workspaceId);
+            }
+            
+            // Clear all caches to ensure all members see the updates immediately
+            cacheHelpers.clearAllCaches();
+          }
+        } catch (error) {
+          console.error('Error clearing cache for shared workspace members:', error);
+          // Continue with the update even if cache clearing fails
+        }
       }
       
       return updatedTask;
@@ -168,7 +271,8 @@ export const taskService = {
       try {
         task = await databases.getDocument(databaseId, tasksCollectionId, id);
       } catch (e) {
-        // If we can't get the task, we'll just clear all caches later
+        console.error('Error getting task for deletion:', e);
+        // Continue with deletion attempt even if we can't get the task
       }
       
       const result = await databases.deleteDocument(
@@ -177,10 +281,39 @@ export const taskService = {
         id
       );
       
-      // Clear cache
+      // If we have task info, clear specific caches
       if (task) {
-        cacheHelpers.clearCache(task.userId, task.workspaceId);
+        // Clear cache for the task owner
+        if (task.userId) {
+          cacheHelpers.clearCache(task.userId, task.workspaceId);
+        }
+        
+        // Check if this is a shared workspace and clear cache for all members
+        if (task.workspaceId && task.workspaceId !== 'default') {
+          try {
+            const workspace = await databases.getDocument(
+              databaseId,
+              workspacesCollectionId,
+              task.workspaceId
+            );
+            
+            // If it's a shared workspace with members
+            if (workspace.members && workspace.members.length > 0) {
+              // Clear cache for workspace owner if different from task creator
+              if (workspace.userId && workspace.userId !== task.userId) {
+                cacheHelpers.clearCache(workspace.userId, task.workspaceId);
+              }
+              
+              // Clear all caches to ensure all members see the updates immediately
+              cacheHelpers.clearAllCaches();
+            }
+          } catch (error) {
+            console.error('Error clearing cache for shared workspace members:', error);
+            // Continue even if cache clearing fails
+          }
+        }
       } else {
+        // If we don't have task info, clear all caches to be safe
         cacheHelpers.clearAllCaches();
       }
       

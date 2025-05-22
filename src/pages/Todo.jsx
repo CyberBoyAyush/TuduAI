@@ -18,6 +18,8 @@ export default function Todo({ showCompletedTasks }) {
   const { 
     tasks, 
     loading: tasksLoading,
+    refreshing,
+    refreshTasks,
     addTask,
     updateTask,
     deleteTask,
@@ -89,6 +91,21 @@ export default function Todo({ showCompletedTasks }) {
           )}
         </div>
       </motion.div>
+      
+      {/* Refresh button and section header */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Your Tasks</h2>
+        <motion.button
+          onClick={refreshTasks}
+          disabled={refreshing}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center px-3 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/30 transition-colors shadow-sm"
+        >
+          <ArrowPathIcon className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          <span className="text-sm font-medium">Refresh Tasks</span>
+        </motion.button>
+      </div>
       
       {/* Task list */}
       <TaskList

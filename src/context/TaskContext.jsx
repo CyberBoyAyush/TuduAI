@@ -15,35 +15,60 @@ export function useTask() {
 
 export function TaskProvider({ children }) {
   const { currentUser } = useAuth();
-  const { activeWorkspaceId } = useWorkspace();
+  const workspace = useWorkspace();
+  const activeWorkspaceId = workspace?.activeWorkspaceId;
+  
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Load tasks when user or workspace changes
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchTasks = async () => {
       if (!currentUser || !activeWorkspaceId) {
-        setTasks([]);
-        setLoading(false);
+        if (isMounted) {
+          setTasks([]);
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        setLoading(true);
+        if (isMounted) setLoading(true);
+        
+        // Clear any existing cache to ensure fresh data
+        taskService.clearCaches();
+        
         const fetchedTasks = await taskService.getTasks(currentUser.$id, activeWorkspaceId);
-        setTasks(fetchedTasks);
+        
+        if (isMounted) {
+          setTasks(fetchedTasks);
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching tasks:", error);
-      } finally {
-        setLoading(false);
+        if (isMounted) {
+          setTasks([]);
+          setLoading(false);
+        }
       }
     };
 
     fetchTasks();
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [currentUser, activeWorkspaceId]);
 
   // Add a new task
   const addTask = async (title, dueDate, urgency) => {
+    if (!currentUser || !activeWorkspaceId) {
+      throw new Error('User or workspace not available');
+    }
+    
     try {
       const newTask = await taskService.createTask(
         title,

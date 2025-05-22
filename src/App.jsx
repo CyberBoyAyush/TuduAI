@@ -11,6 +11,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Todo from './pages/Todo'
+import WorkspaceSettings from './pages/WorkspaceSettings'
 import { AuthProvider } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import { TaskProvider } from './context/TaskContext'
@@ -71,6 +72,14 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <Todo showCompletedTasks={showCompletedTasks} />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/workspace/:workspaceId/settings" 
+                      element={
+                        <ProtectedRoute>
+                          <WorkspaceSettings />
                         </ProtectedRoute>
                       } 
                     />

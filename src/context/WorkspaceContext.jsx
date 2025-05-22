@@ -2,7 +2,7 @@
  * File: WorkspaceContext.jsx
  * Purpose: Manages workspaces for the user to organize tasks
  */
-import { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import workspaceService from '../api/workspaceService';
 
@@ -24,6 +24,7 @@ export function WorkspaceProvider({ children }) {
   const [activeWorkspaceId, setActiveWorkspaceId] = useState('default');
   const [loading, setLoading] = useState(true);
   const hasCleanedUp = useRef(false);
+  const initialLoadComplete = useRef(false);
 
   // Load workspaces from Appwrite when user changes
   useEffect(() => {
@@ -36,33 +37,43 @@ export function WorkspaceProvider({ children }) {
           setActiveWorkspaceId('default');
           setLoading(false);
           hasCleanedUp.current = false;
+          initialLoadComplete.current = false;
         }
         return;
       }
 
+      // Keep showing loading state until all data is ready
+      if (isMounted && !initialLoadComplete.current) {
+        setLoading(true);
+      }
+
       try {
+        // Prepare to store all workspace data before updating state
+        let allWorkspaces = [];
+        let defaultWorkspaceId = null;
+        
         // Only perform cleanup once per session for this user
         if (!hasCleanedUp.current) {
           await workspaceService.cleanupDefaultWorkspaces(currentUser.$id);
           hasCleanedUp.current = true;
         }
         
-        // Now fetch all workspaces for the user
+        // Fetch all workspaces in one go
         const fetchedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
         
         if (!isMounted) return;
         
         if (fetchedWorkspaces && fetchedWorkspaces.length > 0) {
-          setWorkspaces(fetchedWorkspaces);
+          allWorkspaces = fetchedWorkspaces;
           
           // Find the default workspace
           const defaultWorkspace = fetchedWorkspaces.find(w => w.isDefault === true);
           
           if (defaultWorkspace) {
-            setActiveWorkspaceId(defaultWorkspace.$id);
+            defaultWorkspaceId = defaultWorkspace.$id;
           } else {
             // If no default workspace, use the first one
-            setActiveWorkspaceId(fetchedWorkspaces[0].$id);
+            defaultWorkspaceId = fetchedWorkspaces[0].$id;
           }
         } else {
           // If no workspaces, create a default one
@@ -70,12 +81,20 @@ export function WorkspaceProvider({ children }) {
           
           if (!isMounted) return;
           
-          setWorkspaces([defaultWorkspace]);
-          setActiveWorkspaceId(defaultWorkspace.$id);
+          allWorkspaces = [defaultWorkspace];
+          defaultWorkspaceId = defaultWorkspace.$id;
+        }
+        
+        // Only update state once with all the data
+        if (isMounted) {
+          // Batch state updates to reduce renders
+          setWorkspaces(allWorkspaces);
+          setActiveWorkspaceId(defaultWorkspaceId);
+          initialLoadComplete.current = true;
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error fetching workspaces:", error);
-      } finally {
         if (isMounted) {
           setLoading(false);
         }
@@ -90,6 +109,37 @@ export function WorkspaceProvider({ children }) {
     };
   }, [currentUser]);
 
+  // Refresh workspace list
+  const refreshWorkspaces = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      setLoading(true);
+      
+      // Clear the cache to ensure fresh data
+      workspaceService.clearWorkspaceCache();
+      
+      // Fetch fresh workspace data
+      const fetchedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
+      setWorkspaces(fetchedWorkspaces);
+      
+      // Ensure active workspace is still valid
+      const workspaceExists = fetchedWorkspaces.some(w => 
+        (w.$id === activeWorkspaceId || w.id === activeWorkspaceId)
+      );
+      
+      if (!workspaceExists && fetchedWorkspaces.length > 0) {
+        // Find default workspace or use first one
+        const defaultWorkspace = fetchedWorkspaces.find(w => w.isDefault === true);
+        setActiveWorkspaceId(defaultWorkspace ? defaultWorkspace.$id : fetchedWorkspaces[0].$id);
+      }
+    } catch (error) {
+      console.error("Error refreshing workspaces:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser, activeWorkspaceId]);
+  
   // Add a new workspace
   const addWorkspace = async (name, icon = '📋', color = 'indigo') => {
     if (workspaces.length >= MAX_WORKSPACES) {
@@ -110,8 +160,7 @@ export function WorkspaceProvider({ children }) {
       );
       
       // Refresh all workspaces to ensure consistency
-      const updatedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
-      setWorkspaces(updatedWorkspaces);
+      await refreshWorkspaces();
       
       return newWorkspace.$id;
     } catch (error) {
@@ -132,8 +181,7 @@ export function WorkspaceProvider({ children }) {
       const updatedWorkspace = await workspaceService.updateWorkspace(id, updatesWithUserId);
       
       // Refresh all workspaces to ensure consistency
-      const refreshedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
-      setWorkspaces(refreshedWorkspaces);
+      await refreshWorkspaces();
       
       return updatedWorkspace;
     } catch (error) {
@@ -160,22 +208,16 @@ export function WorkspaceProvider({ children }) {
         throw new Error('Cannot delete the last workspace');
       }
       
+      // Store if we're deleting the active workspace
+      const isDeletingActive = activeWorkspaceId === id;
+      
       await workspaceService.deleteWorkspace(id);
       
       // Refresh workspaces after deletion
-      const updatedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
-      setWorkspaces(updatedWorkspaces);
+      await refreshWorkspaces();
       
-      // If the active workspace is being deleted, switch to the default workspace
-      // or the first available one if default doesn't exist
-      if (activeWorkspaceId === id) {
-        const defaultWorkspace = updatedWorkspaces.find(w => w.isDefault === true);
-        if (defaultWorkspace) {
-          setActiveWorkspaceId(defaultWorkspace.$id);
-        } else if (updatedWorkspaces.length > 0) {
-          setActiveWorkspaceId(updatedWorkspaces[0].$id);
-        }
-      }
+      // If needed, the refreshWorkspaces function will already handle
+      // updating the activeWorkspaceId if the current one was deleted
     } catch (error) {
       console.error("Error deleting workspace:", error);
       throw error;
@@ -224,13 +266,82 @@ export function WorkspaceProvider({ children }) {
     if (!currentUser) return;
     
     try {
+      setLoading(true);
       await workspaceService.deleteAllWorkspaces(currentUser.$id);
       const defaultWorkspace = await workspaceService.createDefaultWorkspace(currentUser.$id);
-      setWorkspaces([defaultWorkspace]);
-      setActiveWorkspaceId(defaultWorkspace.$id);
+      
+      // Refresh workspace data
+      await refreshWorkspaces();
+      
       hasCleanedUp.current = true;
     } catch (error) {
       console.error("Error resetting workspaces:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check if user is the owner of the workspace
+  const isWorkspaceOwner = async (workspaceId) => {
+    if (!currentUser) return false;
+    
+    try {
+      return await workspaceService.isWorkspaceOwner(workspaceId, currentUser.$id);
+    } catch (error) {
+      console.error("Error checking workspace ownership:", error);
+      return false;
+    }
+  };
+  
+  // Add a member to a workspace
+  const addWorkspaceMember = async (workspaceId, memberEmail) => {
+    if (!currentUser) {
+      throw new Error('You must be logged in to add members');
+    }
+    
+    try {
+      const result = await workspaceService.addMember(workspaceId, memberEmail, currentUser.$id);
+      
+      // Refresh workspaces to ensure consistency
+      await refreshWorkspaces();
+      
+      return result;
+    } catch (error) {
+      console.error("Error adding workspace member:", error);
+      throw error;
+    }
+  };
+  
+  // Remove a member from a workspace
+  const removeWorkspaceMember = async (workspaceId, memberEmail) => {
+    if (!currentUser) {
+      throw new Error('You must be logged in to remove members');
+    }
+    
+    try {
+      const result = await workspaceService.removeMember(workspaceId, memberEmail, currentUser.$id);
+      
+      // Refresh workspaces to ensure consistency
+      await refreshWorkspaces();
+      
+      return result;
+    } catch (error) {
+      console.error("Error removing workspace member:", error);
+      throw error;
+    }
+  };
+  
+  // Get all members of a workspace
+  const getWorkspaceMembers = async (workspaceId) => {
+    if (!currentUser) {
+      throw new Error('You must be logged in to view members');
+    }
+    
+    try {
+      return await workspaceService.getWorkspaceMembers(workspaceId, currentUser.$id);
+    } catch (error) {
+      console.error("Error getting workspace members:", error);
+      throw error;
     }
   };
 
@@ -243,6 +354,11 @@ export function WorkspaceProvider({ children }) {
     switchWorkspace,
     getActiveWorkspace,
     resetWorkspaces,
+    refreshWorkspaces,
+    isWorkspaceOwner,
+    addWorkspaceMember,
+    removeWorkspaceMember,
+    getWorkspaceMembers,
     loading
   };
 
