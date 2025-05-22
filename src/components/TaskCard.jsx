@@ -2,7 +2,7 @@
  * File: TaskCard.jsx
  * Purpose: Displays a task with its urgency, due time, and comment section
  */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate, getUrgencyColor, getDueDateColor } from '../utils/date'
 import CommentSection from './CommentSection'
@@ -35,6 +35,7 @@ export default function TaskCard({
   const [isProcessing, setIsProcessing] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [showCompletionAnimation, setShowCompletionAnimation] = useState(false)
   
   // Parse comments (convert from strings to objects if needed)
   const parsedComments = useMemo(() => {
@@ -60,7 +61,22 @@ export default function TaskCard({
   
   const handleToggleComplete = (e) => {
     e.stopPropagation()
-    onUpdate(task.$id, { completed: !task.completed })
+    
+    // If we're marking as complete, show the animation
+    if (!task.completed) {
+      setShowCompletionAnimation(true)
+      // Delay the actual update to allow animation to play
+      setTimeout(() => {
+        onUpdate(task.$id, { completed: true })
+        // Keep animation visible for a bit after completion
+        setTimeout(() => {
+          setShowCompletionAnimation(false)
+        }, 800)
+      }, 500)
+    } else {
+      // If unchecking, update immediately without animation
+      onUpdate(task.$id, { completed: false })
+    }
   }
   
   const handleDelete = (e) => {
@@ -260,28 +276,72 @@ export default function TaskCard({
         {/* Task content */}
         <div className="p-4 pl-5">
           <div className="flex items-start space-x-3">
-            {/* Checkbox */}
-            <button
-              onClick={handleToggleComplete}
-              className={`mt-1 w-5 h-5 rounded-sm flex items-center justify-center ${
-                task.completed
-                  ? 'bg-primary-700 text-primary-50 border-primary-700 border'
-                  : 'border border-primary-800'
-              }`}
-            >
-              {task.completed && <CheckIcon className="w-3 h-3" />}
-            </button>
+            {/* Checkbox with completion animation */}
+            <div className="relative mt-1">
+              <button
+                onClick={handleToggleComplete}
+                className={`w-5 h-5 rounded-sm flex items-center justify-center ${
+                  task.completed
+                    ? 'bg-primary-700 text-primary-50 border-primary-700 border'
+                    : 'border border-primary-800'
+                }`}
+              >
+                {task.completed && <CheckIcon className="w-3 h-3" />}
+              </button>
+              
+              {/* Completion animation overlay */}
+              <AnimatePresence>
+                {showCompletionAnimation && (
+                  <motion.div
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="absolute -left-1.5 -top-1.5 flex items-center justify-center"
+                  >
+                    <motion.div 
+                      className="w-8 h-8 bg-[#f76f52] rounded-md shadow-md flex items-center justify-center border border-[#f76f52]"
+                      initial={{ scale: 0, rotate: -10 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    >
+                      <motion.div
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
+                      >
+                        <CheckIcon className="w-5 h-5 text-white" />
+                      </motion.div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             
             {/* Title and due date */}
             <div className="flex-grow">
               <div className="flex items-center justify-between">
                 <h3 className={`font-medium text-primary-700 ${
                   task.completed ? 'line-through text-primary-800' : ''
-                }`}>
+                } relative`}>
                   {task.title}
+                  
+                  {/* Line-through animation */}
+                  <AnimatePresence>
+                    {showCompletionAnimation && (
+                      <motion.div 
+                        className="absolute inset-0 w-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 0.4, delay: 0.3, ease: "easeInOut" }}
+                      >
+                        <div className="h-0.5 w-full bg-[#f76f52] absolute top-1/2 -translate-y-1/2 rounded-full"></div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </h3>
                 
-                {/* Urgency badge - NEW */}
+                {/* Urgency badge */}
                 <span 
                   onClick={(e) => {
                     e.stopPropagation();
