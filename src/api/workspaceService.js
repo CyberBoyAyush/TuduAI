@@ -1,20 +1,75 @@
 import { databases, databaseId, workspacesCollectionId, ID, Query } from './appwrite';
 import taskService from './taskService';
+import { account } from './appwrite';
 
 export const workspaceService = {
+  // Cache for workspaces
+  _workspaceCache: {
+    data: null,
+    timestamp: 0,
+    expiryMs: 30000 // 30 seconds cache
+  },
+  
   // Get all workspaces for a user
   async getWorkspaces(userId) {
     try {
-      const response = await databases.listDocuments(
-        databaseId,
-        workspacesCollectionId,
-        [Query.equal('userId', userId)]
-      );
-      return response.documents;
+      // Check cache first (except for the first load)
+      const now = Date.now();
+      if (this._workspaceCache.data && 
+          (now - this._workspaceCache.timestamp < this._workspaceCache.expiryMs)) {
+        return this._workspaceCache.data;
+      }
+      
+      // First get the user's email for shared workspace lookup
+      const user = await account.get();
+      const userEmail = user.email;
+      
+      // Fetch both owned and shared workspaces in parallel for faster loading
+      const [ownedResponse, sharedResponse] = await Promise.all([
+        // Get workspaces owned by the user
+        databases.listDocuments(
+          databaseId,
+          workspacesCollectionId,
+          [Query.equal('userId', userId)]
+        ),
+        
+        // Get workspaces where the user is a member (using email)
+        databases.listDocuments(
+          databaseId,
+          workspacesCollectionId,
+          [Query.search('members', userEmail)]
+        )
+      ]);
+      
+      // Combine both sets of workspaces and remove duplicates
+      const allWorkspaces = [
+        ...ownedResponse.documents,
+        ...sharedResponse.documents.filter(shared => 
+          !ownedResponse.documents.some(owned => owned.$id === shared.$id)
+        )
+      ];
+      
+      // Update cache
+      this._workspaceCache = {
+        data: allWorkspaces,
+        timestamp: Date.now(),
+        expiryMs: 30000
+      };
+      
+      return allWorkspaces;
     } catch (error) {
       console.error('Error fetching workspaces:', error);
       throw error;
     }
+  },
+  
+  // Clear workspace cache (call this when workspaces are modified)
+  clearWorkspaceCache() {
+    this._workspaceCache = {
+      data: null,
+      timestamp: 0,
+      expiryMs: 30000
+    };
   },
 
   // Create a new workspace
@@ -31,7 +86,7 @@ export const workspaceService = {
       
       // Ensure we only include fields that match the schema
       // IMPORTANT: Include the "id" field in the document data as required by schema
-      return await databases.createDocument(
+      const newWorkspace = await databases.createDocument(
         databaseId,
         workspacesCollectionId,
         docId,
@@ -41,9 +96,15 @@ export const workspaceService = {
           icon: icon,
           color: color,
           userId: userId,
-          isDefault: isDefault
+          isDefault: isDefault,
+          members: [] // Initialize empty members array
         }
       );
+      
+      // Clear cache when creating a workspace
+      this.clearWorkspaceCache();
+      
+      return newWorkspace;
     } catch (error) {
       console.error('Error creating workspace:', error);
       throw error;
@@ -77,13 +138,19 @@ export const workspaceService = {
       if (updates.icon !== undefined) validUpdates.icon = updates.icon;
       if (updates.color !== undefined) validUpdates.color = updates.color;
       if (updates.isDefault !== undefined) validUpdates.isDefault = updates.isDefault;
+      if (updates.members !== undefined) validUpdates.members = updates.members;
       
-      return await databases.updateDocument(
+      const updatedWorkspace = await databases.updateDocument(
         databaseId,
         workspacesCollectionId,
         id,
         validUpdates
       );
+      
+      // Clear cache when updating a workspace
+      this.clearWorkspaceCache();
+      
+      return updatedWorkspace;
     } catch (error) {
       console.error('Error updating workspace:', error);
       throw error;
@@ -97,11 +164,16 @@ export const workspaceService = {
       await taskService.deleteTasksByWorkspaceId(id);
       
       // Then delete the workspace itself
-      return await databases.deleteDocument(
+      const result = await databases.deleteDocument(
         databaseId,
         workspacesCollectionId,
         id
       );
+      
+      // Clear cache when deleting a workspace
+      this.clearWorkspaceCache();
+      
+      return result;
     } catch (error) {
       console.error('Error deleting workspace:', error);
       throw error;
@@ -199,7 +271,7 @@ export const workspaceService = {
       // Otherwise create a new default workspace
       const docId = crypto.randomUUID();
       
-      return await databases.createDocument(
+      const defaultWorkspace = await databases.createDocument(
         databaseId,
         workspacesCollectionId,
         docId,
@@ -209,9 +281,15 @@ export const workspaceService = {
           icon: '📋',
           color: 'indigo',
           userId: userId,
-          isDefault: true
+          isDefault: true,
+          members: [] // Initialize empty members array
         }
       );
+      
+      // Clear cache when creating a default workspace
+      this.clearWorkspaceCache();
+      
+      return defaultWorkspace;
     } catch (error) {
       console.error('Error creating default workspace:', error);
       throw error;
@@ -233,6 +311,153 @@ export const workspaceService = {
       return { success: true };
     } catch (error) {
       console.error('Error deleting all workspaces:', error);
+      throw error;
+    }
+  },
+
+  // Add a member to a workspace
+  async addMember(workspaceId, memberEmail, currentUserId) {
+    try {
+      // Get the workspace to check permissions
+      const workspace = await databases.getDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId
+      );
+      
+      // Only the workspace owner can add members
+      if (workspace.userId !== currentUserId) {
+        throw new Error('Only the workspace owner can add members');
+      }
+      
+      // Check if this is a default workspace
+      if (workspace.isDefault) {
+        throw new Error('Cannot share the default workspace');
+      }
+      
+      // Get the current members array
+      const members = workspace.members || [];
+      
+      // Check if we've reached the maximum number of members (5 total including owner)
+      if (members.length >= 4) {
+        throw new Error('Maximum of 5 users allowed per workspace (including owner)');
+      }
+      
+      // Check if the member is already in the workspace
+      if (members.includes(memberEmail)) {
+        throw new Error('User is already a member of this workspace');
+      }
+      
+      // Add the new member
+      members.push(memberEmail);
+      
+      // Update the workspace
+      const result = await databases.updateDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId,
+        { members: members }
+      );
+      
+      // Clear cache when adding a member
+      this.clearWorkspaceCache();
+      
+      return result;
+    } catch (error) {
+      console.error('Error adding member to workspace:', error);
+      throw error;
+    }
+  },
+  
+  // Remove a member from a workspace
+  async removeMember(workspaceId, memberEmail, currentUserId) {
+    try {
+      // Get the workspace to check permissions
+      const workspace = await databases.getDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId
+      );
+      
+      // Only the workspace owner can remove members
+      if (workspace.userId !== currentUserId) {
+        throw new Error('Only the workspace owner can remove members');
+      }
+      
+      // Get the current members array
+      const members = workspace.members || [];
+      
+      // Remove the member
+      const updatedMembers = members.filter(email => email !== memberEmail);
+      
+      // Update the workspace
+      const result = await databases.updateDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId,
+        { members: updatedMembers }
+      );
+      
+      // Clear cache when removing a member
+      this.clearWorkspaceCache();
+      
+      return result;
+    } catch (error) {
+      console.error('Error removing member from workspace:', error);
+      throw error;
+    }
+  },
+  
+  // Check if a user is the owner of a workspace
+  async isWorkspaceOwner(workspaceId, userId) {
+    try {
+      const workspace = await databases.getDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId
+      );
+      
+      return workspace.userId === userId;
+    } catch (error) {
+      console.error('Error checking workspace ownership:', error);
+      return false;
+    }
+  },
+  
+  // Get all members of a workspace
+  async getWorkspaceMembers(workspaceId, currentUserId) {
+    try {
+      // Get the current user's email
+      const user = await account.get();
+      const userEmail = user.email;
+      
+      const workspace = await databases.getDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId
+      );
+      
+      // Only the workspace owner or members can view the member list
+      if (workspace.userId !== currentUserId && !workspace.members.includes(userEmail)) {
+        throw new Error('You do not have permission to view this workspace');
+      }
+      
+      // Get the owner's email instead of just returning the userId
+      let ownerEmail = '';
+      try {
+        const ownerUser = await account.get(workspace.userId);
+        ownerEmail = ownerUser.email;
+      } catch (error) {
+        console.error('Error fetching workspace owner email:', error);
+        ownerEmail = workspace.userId; // Fallback to userId if email fetch fails
+      }
+      
+      return {
+        owner: ownerEmail, // Return email instead of userId
+        members: workspace.members || []
+      };
+    } catch (error) {
+      console.error('Error getting workspace members:', error);
       throw error;
     }
   }

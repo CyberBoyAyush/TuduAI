@@ -222,9 +222,9 @@ export default function TaskInput({ onAddTask }) {
       >
         {parsedTask && !parsedTask.dueDate ? (
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              <ClockIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
-              When is "{parsedTask.title}" due?
+            <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              <ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+              When is "{parsedTask.title.length > 20 ? parsedTask.title.substring(0, 20) + '...' : parsedTask.title}" due?
             </h3>
             
             <TimeSuggestions 
@@ -308,12 +308,12 @@ export default function TaskInput({ onAddTask }) {
               }}
             />
             
-            <div className="mt-5 flex justify-between">
+            <div className="mt-5 flex justify-between gap-2">
               <motion.button
                 onClick={resetForm}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-4 py-2 rounded-lg border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50 shadow-sm"
+                className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-3 sm:px-4 py-2 rounded-lg border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50 shadow-sm"
               >
                 Cancel
               </motion.button>
@@ -322,25 +322,26 @@ export default function TaskInput({ onAddTask }) {
                 onClick={() => finalizeTask({ dueDate: null, urgency: parsedTask.urgency })}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-4 py-2 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 shadow-sm"
+                className="text-xs sm:text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 sm:px-4 py-2 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 shadow-sm"
               >
-                Skip (no due date)
+                <span className="hidden sm:inline">Skip (no due date)</span>
+                <span className="sm:hidden">Skip</span>
               </motion.button>
             </div>
           </div>
         ) : parsedTask && !parsedTask.urgency ? (
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-              <ExclamationCircleIcon className="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
+            <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-800 dark:text-white flex items-center bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              <ExclamationCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-indigo-500 dark:text-indigo-400" />
               How urgent is this task?
             </h3>
             
-            <div className="mb-4 text-md text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-neutral-700/30 rounded-xl border border-gray-200 dark:border-neutral-600/30 shadow-inner">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{parsedTask.title}</span>
+            <div className="mb-4 text-sm sm:text-md text-gray-700 dark:text-gray-300 p-3 sm:p-4 bg-gray-50 dark:bg-neutral-700/30 rounded-xl border border-gray-200 dark:border-neutral-600/30 shadow-inner">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <span className="font-medium truncate">{parsedTask.title.length > 25 ? parsedTask.title.substring(0, 25) + '...' : parsedTask.title}</span>
                 {parsedTask.dueDate && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                    <ClockIcon className="w-4 h-4 mr-1" />
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center whitespace-nowrap">
+                    <ClockIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                     {new Date(parsedTask.dueDate).toLocaleString('en-US', {
                       weekday: 'short',
                       month: 'short',
@@ -367,12 +368,12 @@ export default function TaskInput({ onAddTask }) {
               initialValue={3}
             />
             
-            <div className="mt-5 flex justify-between">
+            <div className="mt-5 flex justify-between gap-2">
               <motion.button
                 onClick={resetForm}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-4 py-2 rounded-lg border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50 shadow-sm"
+                className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors px-3 sm:px-4 py-2 rounded-lg border border-gray-200 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-700/50 shadow-sm"
               >
                 Cancel
               </motion.button>
@@ -381,17 +382,18 @@ export default function TaskInput({ onAddTask }) {
                 onClick={() => finalizeTask({ urgency: 3, dueDate: parsedTask.dueDate })}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-4 py-2 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 shadow-sm"
+                className="text-xs sm:text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 sm:px-4 py-2 rounded-lg border border-indigo-100 dark:border-indigo-800/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 shadow-sm"
               >
-                Use Default (3)
+                <span className="hidden sm:inline">Use Default (3)</span>
+                <span className="sm:hidden">Default (3)</span>
               </motion.button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-400/20 dark:to-indigo-400/20 text-violet-600 dark:text-violet-400 p-3 rounded-xl shadow-sm border border-violet-200/50 dark:border-violet-700/30">
-                <PlusIcon className="w-5 h-5" />
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
+              <div className="bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-400/20 dark:to-indigo-400/20 text-violet-600 dark:text-violet-400 p-2 sm:p-3 rounded-xl shadow-sm border border-violet-200/50 dark:border-violet-700/30 hidden sm:block">
+                <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               
               <input
@@ -401,7 +403,7 @@ export default function TaskInput({ onAddTask }) {
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setIsExpanded(true)}
                 placeholder="What do you want to do?"
-                className="flex-grow bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-base py-3 transition-all"
+                className="flex-grow bg-transparent border-none focus:outline-none focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base py-2 sm:py-3 min-w-0 transition-all"
                 disabled={loading}
               />
               
@@ -413,15 +415,15 @@ export default function TaskInput({ onAddTask }) {
                   onClick={parsePreview}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
-                  className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-2.5 rounded-xl transition-colors bg-violet-50 dark:bg-violet-900/20 border border-violet-200/50 dark:border-violet-800/30 shadow-sm"
+                  className="text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 p-2 sm:p-2.5 rounded-xl transition-colors bg-violet-50 dark:bg-violet-900/20 border border-violet-200/50 dark:border-violet-800/30 shadow-sm flex-shrink-0"
                 >
-                  <LightBulbIcon className="w-5 h-5" />
+                  <LightBulbIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </motion.button>
               )}
               
               {loading && (
-                <div className="p-2.5">
-                  <ArrowPathIcon className="w-5 h-5 text-violet-500 animate-spin" />
+                <div className="p-2 sm:p-2.5 flex-shrink-0">
+                  <ArrowPathIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500 animate-spin" />
                 </div>
               )}
               
@@ -430,13 +432,13 @@ export default function TaskInput({ onAddTask }) {
                 disabled={!input.trim() || loading}
                 whileHover={{ scale: input.trim() && !loading ? 1.03 : 1 }}
                 whileTap={{ scale: input.trim() && !loading ? 0.97 : 1 }}
-                className={`px-5 py-2.5 rounded-xl text-white font-medium bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md ${
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-white font-medium bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex-shrink-0 ${
                   (!input.trim() || loading) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <span className="flex items-center">
-                  Add
-                  <ArrowUpIcon className="w-4 h-4 ml-1.5 -rotate-45" />
+                  <span className="sm:inline">Add</span>
+                  <ArrowUpIcon className="w-4 h-4 ml-1 -rotate-45" />
                 </span>
               </motion.button>
             </div>
@@ -451,24 +453,24 @@ export default function TaskInput({ onAddTask }) {
                   className="mt-5"
                 >
                   {/* Info notice */}
-                  <div className="flex justify-between items-center mb-3">
+                  <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 mb-3">
                     <motion.button
                       type="button"
                       onClick={() => setShowTips(!showTips)}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="text-xs flex items-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-700/30 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors shadow-sm"
+                      className="text-xs flex items-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-700/30 px-2 sm:px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors shadow-sm"
                     >
-                      <InformationCircleIcon className="w-4 h-4 mr-1" />
-                      {showTips ? 'Hide tips' : 'Type naturally, AI will parse your task'}
+                      <InformationCircleIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                      {showTips ? 'Hide tips' : <span><span className="hidden sm:inline">Type naturally, AI will parse your task</span><span className="sm:hidden">Tips</span></span>}
                     </motion.button>
                     
                     <motion.span 
-                      className="text-xs text-gray-500 dark:text-gray-400 flex items-center bg-gray-50 dark:bg-neutral-900/50 px-3 py-1.5 rounded-full shadow-sm"
+                      className="text-xs text-gray-500 dark:text-gray-400 flex items-center bg-gray-50 dark:bg-neutral-900/50 px-2 sm:px-3 py-1.5 rounded-full shadow-sm"
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <BoltIcon className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+                      <BoltIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-amber-500" />
                       <span>GPT-4.1 Mini</span>
                     </motion.span>
                   </div>
@@ -503,23 +505,23 @@ export default function TaskInput({ onAddTask }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 25 }}
-                        className="mb-4 p-5 bg-gradient-to-br from-violet-50/90 to-indigo-50/90 dark:from-violet-900/10 dark:to-indigo-900/10 border border-violet-200/70 dark:border-violet-800/20 rounded-xl shadow-sm"
+                        className="mb-4 p-3 sm:p-5 bg-gradient-to-br from-violet-50/90 to-indigo-50/90 dark:from-violet-900/10 dark:to-indigo-900/10 border border-violet-200/70 dark:border-violet-800/20 rounded-xl shadow-sm"
                       >
-                        <h4 className="font-medium text-violet-800 dark:text-violet-300 mb-3 flex items-center">
-                          <LightBulbIcon className="w-4 h-4 mr-1.5" />
+                        <h4 className="font-medium text-sm sm:text-base text-violet-800 dark:text-violet-300 mb-2 sm:mb-3 flex items-center">
+                          <LightBulbIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
                           AI Parsed Your Task
                         </h4>
-                        <div className="text-sm space-y-3 text-gray-700 dark:text-gray-300">
+                        <div className="text-xs sm:text-sm space-y-2 sm:space-y-3 text-gray-700 dark:text-gray-300">
                           <div className="flex items-start">
-                            <span className="font-medium w-16 shrink-0">Title:</span>
-                            <span className="flex-grow font-semibold text-gray-900 dark:text-gray-100">{parsedTask.title}</span>
+                            <span className="font-medium w-12 sm:w-16 shrink-0">Title:</span>
+                            <span className="flex-grow font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">{parsedTask.title}</span>
                           </div>
                           <div className="flex items-start">
-                            <span className="font-medium w-16 shrink-0">Due:</span>
+                            <span className="font-medium w-12 sm:w-16 shrink-0">Due:</span>
                             <span>
                               {parsedTask.dueDate 
-                                ? <span className="flex items-center bg-white/60 dark:bg-white/5 px-2 py-1 rounded-md">
-                                    <ClockIcon className="w-3.5 h-3.5 mr-1.5 text-indigo-500 dark:text-indigo-400" />
+                                ? <span className="flex items-center bg-white/60 dark:bg-white/5 px-2 py-1 rounded-md text-xs sm:text-sm">
+                                    <ClockIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5 text-indigo-500 dark:text-indigo-400" />
                                     {new Date(parsedTask.dueDate).toLocaleString('en-US', {
                                       weekday: 'short',
                                       month: 'short',
@@ -532,11 +534,11 @@ export default function TaskInput({ onAddTask }) {
                             </span>
                           </div>
                           <div className="flex items-start">
-                            <span className="font-medium w-16 shrink-0">Urgency:</span>
+                            <span className="font-medium w-12 sm:w-16 shrink-0">Urgency:</span>
                             <span>
                               {parsedTask.urgency 
-                                ? <span className="flex items-center bg-white/60 dark:bg-white/5 px-2 py-1 rounded-md">
-                                    <span className={`inline-block w-3 h-3 rounded-full mr-1.5 ${
+                                ? <span className="flex items-center bg-white/60 dark:bg-white/5 px-2 py-1 rounded-md text-xs sm:text-sm">
+                                    <span className={`inline-block w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full mr-1 sm:mr-1.5 ${
                                       parsedTask.urgency >= 4.5 ? 'bg-red-500' :
                                       parsedTask.urgency >= 3.5 ? 'bg-orange-500' :
                                       parsedTask.urgency >= 2.5 ? 'bg-yellow-500' :
@@ -551,16 +553,16 @@ export default function TaskInput({ onAddTask }) {
                           
                           {/* Display follow-up message if present */}
                           {parsedTask.followUp && (
-                            <p className="mt-3 text-violet-600 dark:text-violet-400 border-t border-violet-100 dark:border-violet-800/30 pt-2">
+                            <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-violet-600 dark:text-violet-400 border-t border-violet-100 dark:border-violet-800/30 pt-2">
                               <span className="font-medium">Next step:</span> {parsedTask.followUp}
                             </p>
                           )}
                           
                           {/* Show suggestions if available */}
                           {parsedTask.suggestions && parsedTask.suggestions.length > 0 && (
-                            <div className="mt-3 border-t border-violet-100 dark:border-violet-800/30 pt-2">
-                              <p className="font-medium mb-2">Suggestions:</p>
-                              <div className="flex flex-wrap gap-2">
+                            <div className="mt-2 sm:mt-3 border-t border-violet-100 dark:border-violet-800/30 pt-2">
+                              <p className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">Suggestions:</p>
+                              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                 {parsedTask.suggestions.map((suggestion, index) => (
                                   <motion.button
                                     key={index}
@@ -594,9 +596,14 @@ export default function TaskInput({ onAddTask }) {
                                     }}
                                     whileHover={{ scale: 1.05, y: -1 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-3 py-1.5 bg-white dark:bg-neutral-800 text-violet-700 dark:text-violet-300 rounded-full text-xs hover:bg-violet-50 dark:hover:bg-violet-900/20 border border-violet-200 dark:border-violet-800/30 shadow-sm transition-colors"
+                                    className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white dark:bg-neutral-800 text-violet-700 dark:text-violet-300 rounded-full text-xs hover:bg-violet-50 dark:hover:bg-violet-900/20 border border-violet-200 dark:border-violet-800/30 shadow-sm transition-colors"
                                   >
-                                    {suggestion.displayText}
+                                    <span className="hidden sm:inline">{suggestion.displayText}</span>
+                                    <span className="sm:hidden">
+                                      {suggestion.displayText.length > 15 
+                                        ? suggestion.displayText.substring(0, 15) + '...' 
+                                        : suggestion.displayText}
+                                    </span>
                                   </motion.button>
                                 ))}
                               </div>

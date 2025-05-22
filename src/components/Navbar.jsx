@@ -51,7 +51,12 @@ const Logo = ({ className = "" }) => (
 
 export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleShowCompletedTasks }) {
   const { currentUser, logout } = useAuth()
-  const { workspaces, activeWorkspaceId, switchWorkspace, getActiveWorkspace } = useWorkspace()
+  const workspace = useWorkspace()
+  const workspaces = workspace?.workspaces || []
+  const activeWorkspaceId = workspace?.activeWorkspaceId
+  const switchWorkspace = workspace?.switchWorkspace
+  const getActiveWorkspace = workspace?.getActiveWorkspace
+  
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isWorkspaceSelectorOpen, setIsWorkspaceSelectorOpen] = useState(false)
@@ -66,7 +71,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   }, [location.pathname])
   
   // Get the current active workspace
-  const activeWorkspace = getActiveWorkspace()
+  const activeWorkspace = getActiveWorkspace ? getActiveWorkspace() : null
   
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -85,12 +90,9 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   
   // Handle keyboard shortcuts for workspace switching
   const handleKeyboardShortcuts = useCallback((event) => {
-    console.log('Keydown event:', event.key, 'Alt:', event.altKey, 'KeyCode:', event.keyCode);
-    
     // Only handle if user is not in an input field
     if (document.activeElement.tagName === 'INPUT' || 
         document.activeElement.tagName === 'TEXTAREA') {
-      console.log('Input field active, ignoring shortcut');
       return;
     }
     
@@ -112,46 +114,28 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
         keyNum = event.keyCode - 96;  // KeyCode 97 = numpad '1', etc.
       }
       
-      console.log('Detected key number:', keyNum);
-      
       // If we have a valid number key
       if (keyNum !== null && keyNum >= 1 && keyNum <= 5) {
         // Prevent default browser behavior
         event.preventDefault();
-        
-        console.log('Valid workspace shortcut pressed:', keyNum);
-        console.log('Available workspaces:', workspaces);
         
         // Find the workspace at the corresponding index (0-indexed)
         const targetIndex = keyNum - 1;
         
         if (workspaces && workspaces.length > targetIndex) {
           const targetWorkspace = workspaces[targetIndex];
-          console.log('Target workspace:', targetWorkspace);
           
           if (!targetWorkspace) {
-            console.error('No workspace found at index', targetIndex);
             return;
           }
           
-          // Log current and target workspace ID
-          const workspaceId = targetWorkspace.$id || targetWorkspace.id;
-          console.log('Current workspace ID:', activeWorkspaceId);
-          console.log('Target workspace ID:', workspaceId);
-          
           // From checking WorkspaceContext.jsx, we know workspaces use $id
           if (targetWorkspace.$id && targetWorkspace.$id !== activeWorkspaceId) {
-            console.log('Switching to workspace by $id:', targetWorkspace.$id);
             switchWorkspace(targetWorkspace.$id);
           } else if (targetWorkspace.id && targetWorkspace.id !== activeWorkspaceId) {
             // Fallback to id for default workspaces
-            console.log('Switching to workspace by id:', targetWorkspace.id);
             switchWorkspace(targetWorkspace.id);
-          } else {
-            console.log('Already on this workspace, not switching');
           }
-        } else {
-          console.log('No workspace at index', targetIndex, 'Available:', workspaces.length);
         }
       }
     }

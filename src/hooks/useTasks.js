@@ -2,7 +2,7 @@
  * File: useTasks.js
  * Purpose: Custom hook for tasks management (CRUD operations)
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import taskService from '../api/taskService'
@@ -14,14 +14,46 @@ import reminderService from '../api/reminderService'
 export default function useTasks() {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const { currentUser } = useAuth()
   const { activeWorkspaceId } = useWorkspace()
+  
+  // Function to fetch tasks
+  const fetchTasks = useCallback(async (isRefreshing = false) => {
+    // Skip if not authenticated or no workspace
+    if (!currentUser || !activeWorkspaceId) {
+      setTasks([])
+      setLoading(false)
+      if (isRefreshing) setRefreshing(false)
+      return
+    }
+    
+    try {
+      // Clear cache to ensure fresh data
+      taskService.clearCaches()
+      
+      const tasksData = await taskService.getTasks(currentUser.$id, activeWorkspaceId)
+      setTasks(tasksData)
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+      setTasks([])
+    } finally {
+      setLoading(false)
+      if (isRefreshing) setRefreshing(false)
+    }
+  }, [currentUser, activeWorkspaceId])
+  
+  // Manual refresh function
+  const refreshTasks = useCallback(() => {
+    setRefreshing(true)
+    fetchTasks(true)
+  }, [fetchTasks])
   
   // Load tasks from Appwrite when user or workspace changes
   useEffect(() => {
     let isMounted = true;
     
-    const fetchTasks = async () => {
+    const loadTasks = async () => {
       // Set loading only once at the beginning
       if (isMounted) setLoading(true);
       
@@ -49,7 +81,7 @@ export default function useTasks() {
       }
     }
     
-    fetchTasks()
+    loadTasks()
     
     return () => {
       isMounted = false;
@@ -239,6 +271,8 @@ export default function useTasks() {
   return {
     tasks,
     loading,
+    refreshing,
+    refreshTasks,
     addTask,
     updateTask,
     deleteTask,

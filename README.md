@@ -12,6 +12,7 @@ TuduAI is an AI-powered task management application built with React.js and Tail
 - **Dark/Light Mode**: Beautiful UI that adapts to your preference
 - **Comment System**: Add notes and reminders to your tasks
 - **Special Commands**: Use `!remindme` and `!help` in comments for extra functionality
+- **Workspace Collaboration**: Share workspaces with up to 4 other users for team collaboration
 
 ## Technology Stack
 
@@ -53,6 +54,8 @@ VITE_APPWRITE_TASKS_COLLECTION_ID=your-tasks-collection-id
 VITE_APPWRITE_REMINDERS_COLLECTION_ID=your-reminders-collection-id
 # No longer needed in client code - set this as a Vercel Secret
 # VITE_OPENAI_API_KEY=your_openai_api_key_here
+# For schema updates (optional)
+APPWRITE_API_KEY=your-appwrite-api-key
 ```
 
 4. For deployment, add your OpenAI API key as a Vercel Secret:
@@ -73,6 +76,7 @@ vercel secrets add openai_api_key your_openai_api_key_here
   - color      (String, 20, Required)
   - userId     (String, 36, Required)
   - isDefault  (Boolean, Required, default=false)
+  - members    (String[], Optional) - For workspace collaboration
 
 • tasks:
   - id           (String, 36, Required)
@@ -100,14 +104,21 @@ vercel secrets add openai_api_key your_openai_api_key_here
   - status       (String,10, Required, enum: "pending","done")
 ```
 
-5. Start the development server
+6. (Optional) Update the database schema for collaboration:
+```bash
+npm run update-schema
+# or
+pnpm update-schema
+```
+
+7. Start the development server
 ```bash
 npm run dev
 # or
 pnpm dev
 ```
 
-6. Open http://localhost:5173 in your browser
+8. Open http://localhost:5173 in your browser
 
 ## Usage
 
@@ -129,6 +140,14 @@ Type your task in natural language in the input field:
 
 - `!remindme` - Sets a reminder for the task
 - `!help` - Shows available commands
+
+### Workspace Collaboration
+
+- Click on the workspace selector in the navbar
+- Click the settings icon (⚙️) next to a workspace
+- Add member emails in the collaboration section
+- Members can view, add, edit, and delete tasks in shared workspaces
+- See [Collaboration Documentation](docs/COLLABORATION.md) for details
 
 ## License
 
