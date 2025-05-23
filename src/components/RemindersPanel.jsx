@@ -75,7 +75,7 @@ export default function RemindersPanel({ isOpen, onClose }) {
   const getReminderStatusBadge = (reminder) => {
     if (reminder.status === 'done') {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium">
           <CheckCircleIcon className="w-3 h-3 mr-1" />
           Sent
         </span>
@@ -84,26 +84,44 @@ export default function RemindersPanel({ isOpen, onClose }) {
     
     if (!reminder.dueDate) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 text-xs font-medium">
           <ClockIcon className="w-3 h-3 mr-1" />
           No date
         </span>
       )
     }
     
+    const now = new Date()
+    const dueDate = new Date(reminder.dueDate)
+    const diffMs = dueDate.getTime() - now.getTime()
+    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    
     if (isPast(reminder.dueDate)) {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
+        <span className="inline-flex items-center px-2 py-1 rounded-md bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800 text-xs font-medium">
           <ClockIcon className="w-3 h-3 mr-1" />
           Sending...
         </span>
       )
     }
     
+    // Show relative time for upcoming reminders
+    let timeText = formatDate(reminder.dueDate)
+    if (diffDays <= 1) {
+      if (diffHours <= 1) {
+        timeText = `${Math.max(1, Math.ceil(diffMs / (1000 * 60)))}m`
+      } else {
+        timeText = `${diffHours}h`
+      }
+    } else if (diffDays <= 7) {
+      timeText = `${diffDays}d`
+    }
+    
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-md bg-white dark:bg-black text-black dark:text-white border border-black/10 dark:border-white/10 text-xs">
+      <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-xs font-medium">
         <CalendarIcon className="w-3 h-3 mr-1" />
-        {formatDate(reminder.dueDate)}
+        {timeText}
       </span>
     )
   }
@@ -221,19 +239,19 @@ export default function RemindersPanel({ isOpen, onClose }) {
                     .map(reminder => (
                       <motion.div
                         key={reminder.$id}
-                        className="bg-primary-50 border border-primary-300 rounded-md p-4 shadow-sm"
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         whileHover={{ y: -2 }}
                       >
                         <div className="flex justify-between items-start mb-3">
-                          <span className="font-medium text-primary-700">
+                          <span className="font-medium text-gray-900 dark:text-gray-100 leading-relaxed">
                             {reminder.text}
                           </span>
                           <motion.button
                             onClick={() => handleDelete(reminder.$id)}
-                            className="text-primary-800 hover:text-primary-700 transition-colors p-1 rounded-full"
+                            className="text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                           >
@@ -244,10 +262,26 @@ export default function RemindersPanel({ isOpen, onClose }) {
                         <div className="flex justify-between items-center">
                           {getReminderStatusBadge(reminder)}
                           
-                          <span className="text-xs text-primary-800 bg-primary-100 px-2 py-1 rounded-md border border-primary-300">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600 font-medium">
                             {reminder.taskTitle || "Unknown task"}
                           </span>
                         </div>
+                        
+                        {reminder.dueDate && (
+                          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                              <ClockIcon className="w-3 h-3 mr-1" />
+                              Due: {new Date(reminder.dueDate).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     ))}
                   
