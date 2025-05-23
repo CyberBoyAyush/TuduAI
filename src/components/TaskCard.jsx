@@ -3,10 +3,13 @@
  * Purpose: Displays a task with its urgency, due time, and comment section
  */
 import { useState, useMemo, useEffect } from 'react'
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDate, getUrgencyColor, getDueDateColor } from '../utils/date'
 import CommentSection from './CommentSection'
 import { parseTaskInput } from '../lib/openai'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { 
   CheckIcon, 
   TrashIcon, 
@@ -20,14 +23,15 @@ import {
   FlagIcon
 } from '@heroicons/react/24/outline'
 
-export default function TaskCard({
+export default React.memo(function TaskCard({
   task,
   isExpanded,
   onClick,
   onUpdate,
   onDelete,
   onAddComment,
-  onDeleteComment
+  onDeleteComment,
+  isDragOverlay = false
 }) {
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [isUrgencyModalOpen, setIsUrgencyModalOpen] = useState(false)
@@ -36,6 +40,38 @@ export default function TaskCard({
   const [suggestions, setSuggestions] = useState([])
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [showCompletionAnimation, setShowCompletionAnimation] = useState(false)
+  
+  // DnD setup with useSortable hook - skip if this is a drag overlay
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    active,
+    over,
+  } = !isDragOverlay ? useSortable({ 
+    id: task.$id,
+    data: {
+      type: 'task',
+      task
+    },
+    animateLayoutChanges: () => false
+  }) : { attributes: {}, listeners: {}, setNodeRef: null };
+
+  const style = !isDragOverlay ? {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : 1,
+    willChange: 'transform',
+    transformOrigin: '0 0',
+    backfaceVisibility: 'hidden',
+  } : {
+    willChange: 'transform',
+    backfaceVisibility: 'hidden',
+  };
   
   // Parse comments (convert from strings to objects if needed)
   const parsedComments = useMemo(() => {
@@ -192,8 +228,8 @@ export default function TaskCard({
   
   const cardVariants = {
     initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-    exit: { opacity: 0, y: -20, transition: { duration: 0.2 } }
+    animate: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.15 } }
   }
   
   // Create urgency levels with their colors and labels
@@ -254,14 +290,12 @@ export default function TaskCard({
   const urgencyDisplay = getUrgencyDisplay(task.urgency);
   
   return (
-    <motion.div
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className={`bg-primary-100 rounded-md overflow-hidden border border-primary-300 shadow-sm mb-3 transition-opacity font-sans ${
+    <div
+      ref={!isDragOverlay ? setNodeRef : undefined}
+      style={style}
+      className={`bg-primary-100 rounded-md overflow-hidden border border-primary-300 shadow-sm mb-3 transition-all font-sans ${
         task.completed ? 'opacity-60' : 'opacity-100'
-      }`}
+      } ${isDragging ? 'shadow-xl border-primary-500 ring-2 ring-primary-300 ring-opacity-50 cursor-grabbing' : ''} ${isDragOverlay ? 'shadow-xl border-primary-500' : ''}`}
     >
       {/* Task header and content */}
       <div 
@@ -272,6 +306,19 @@ export default function TaskCard({
         <div 
           className={`absolute left-0 top-0 bottom-0 w-1 ${getUrgencyIndicator(task.urgency)}`}
         />
+        
+        {/* Add a visual drag indicator */}
+        {!isDragOverlay && (
+          <div 
+            className="absolute right-1 top-1 w-6 h-6 flex items-center justify-center rounded-full bg-primary-200 opacity-40 hover:opacity-80 cursor-grab active:cursor-grabbing transition-opacity"
+            {...attributes}
+            {...listeners}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-primary-700">
+              <path d="M8 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm0 6a2 2 0 11-4 0 2 2 0 014 0zm6-12a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm-6 6a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm-6 6a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+        )}
         
         {/* Task content */}
         <div className="p-4 pl-5">
@@ -658,6 +705,18 @@ export default function TaskCard({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.task.$id === nextProps.task.$id &&
+    prevProps.isExpanded === nextProps.isExpanded &&
+    prevProps.isDragOverlay === nextProps.isDragOverlay &&
+    prevProps.task.completed === nextProps.task.completed &&
+    prevProps.task.title === nextProps.task.title &&
+    prevProps.task.urgency === nextProps.task.urgency &&
+    prevProps.task.dueDate === nextProps.task.dueDate &&
+    JSON.stringify(prevProps.task.comments) === JSON.stringify(nextProps.task.comments)
+  );
+});
