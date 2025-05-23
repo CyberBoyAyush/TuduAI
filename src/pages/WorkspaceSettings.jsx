@@ -36,8 +36,7 @@ export default function WorkspaceSettings() {
   const [loading, setLoading] = useState(true);
   const [workspaceForm, setWorkspaceForm] = useState({
     name: '',
-    icon: '',
-    color: ''
+    icon: ''
   });
 
   // Load workspace data
@@ -56,8 +55,7 @@ export default function WorkspaceSettings() {
         setWorkspace(foundWorkspace);
         setWorkspaceForm({
           name: foundWorkspace.name || '',
-          icon: foundWorkspace.icon || '📋',
-          color: foundWorkspace.color || 'indigo'
+          icon: foundWorkspace.icon || '📋'
         });
 
         // Check if user is the owner
@@ -68,7 +66,9 @@ export default function WorkspaceSettings() {
         if (ownerStatus || (foundWorkspace.members && foundWorkspace.members.includes(currentUser.email))) {
           const memberData = await getWorkspaceMembers(workspaceId);
           setMembers(memberData.members || []);
-          setOwner(memberData.owner || '');
+          
+          // Use the ownerEmail from the workspace if available, otherwise use from memberData
+          setOwner(foundWorkspace.ownerEmail || memberData.owner || '');
         }
       } catch (error) {
         console.error('Error loading workspace settings:', error);
@@ -90,8 +90,7 @@ export default function WorkspaceSettings() {
     try {
       await updateWorkspace(workspaceId, {
         name: workspaceForm.name,
-        icon: workspaceForm.icon,
-        color: workspaceForm.color
+        icon: workspaceForm.icon
       });
       setSuccess('Workspace updated successfully');
     } catch (error) {
@@ -208,13 +207,13 @@ export default function WorkspaceSettings() {
       )}
 
       <motion.div 
-        className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+        className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a] shadow-sm"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
         <div className="flex items-center mb-6">
-          <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+          <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4 border border-[#d8d6cf] dark:border-[#3a3a3a]">
             <PencilSquareIcon className="w-6 h-6 text-[#f76f52]" />
           </div>
           <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Information</h2>
@@ -228,57 +227,35 @@ export default function WorkspaceSettings() {
             <input
               id="name"
               type="text"
-              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all"
+              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-3 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent transition-all placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
               value={workspaceForm.name}
               onChange={(e) => setWorkspaceForm({...workspaceForm, name: e.target.value})}
               disabled={!isOwner}
               required
+              placeholder="Enter workspace name"
             />
           </div>
           
-          <div className="mb-5">
+          <div className="mb-6">
             <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2" htmlFor="icon">
               Icon
             </label>
             <input
               id="icon"
               type="text"
-              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all"
+              className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-3 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent transition-all placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
               value={workspaceForm.icon}
               onChange={(e) => setWorkspaceForm({...workspaceForm, icon: e.target.value})}
               disabled={!isOwner}
+              placeholder="📋"
             />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2" htmlFor="color">
-              Color Theme
-            </label>
-            <div className="relative">
-              <select
-                id="color"
-                className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-2.5 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent transition-all appearance-none"
-                value={workspaceForm.color}
-                onChange={(e) => setWorkspaceForm({...workspaceForm, color: e.target.value})}
-                disabled={!isOwner}
-              >
-                <option value="black">Black</option>
-                <option value="gray">Gray</option>
-                <option value="white">White</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#202020] dark:text-[#f2f0e3]">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-              </div>
-            </div>
           </div>
           
           {isOwner && (
             <div className="flex items-center justify-end">
               <motion.button
                 type="submit"
-                className="bg-[#f76f52] text-[#f2f0e3] font-medium py-2.5 px-6 rounded-md focus:outline-none border border-transparent transition-colors shadow-sm hover:bg-[#e55e41]"
+                className="bg-[#f76f52] text-[#f2f0e3] font-medium py-3 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:ring-offset-2 focus:ring-offset-[#f2f0e3] dark:focus:ring-offset-[#202020] border border-transparent transition-all shadow-sm hover:bg-[#e55e41]"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
@@ -292,13 +269,13 @@ export default function WorkspaceSettings() {
       {/* Collaboration section - only visible to workspace owner */}
       {isOwner && !workspace.isDefault && (
         <motion.div 
-          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 mb-8 border border-[#d8d6cf] dark:border-[#3a3a3a] shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center mb-6">
-            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4 border border-[#d8d6cf] dark:border-[#3a3a3a]">
               <UserGroupIcon className="w-6 h-6 text-[#f76f52]" />
             </div>
             <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Collaboration</h2>
@@ -306,7 +283,7 @@ export default function WorkspaceSettings() {
           
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4 text-[#202020] dark:text-[#f2f0e3] flex items-center">
-              <UserCircleIcon className="w-5 h-5 mr-2" />
+              <UserCircleIcon className="w-5 h-5 mr-2 text-[#3a3a3a] dark:text-[#d1cfbf]" />
               Current Members
             </h3>
             
@@ -315,21 +292,20 @@ export default function WorkspaceSettings() {
                 No members have been added to this workspace.
               </div>
             ) : (
-              <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden rounded-md">
+              <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden rounded-md bg-[#f2f0e3] dark:bg-[#202020]">
                 <ul className="divide-y divide-[#d8d6cf] dark:divide-[#3a3a3a]">
                   {members.map((member, index) => (
                     <motion.li 
                       key={index} 
                       className="py-4 px-5 flex justify-between items-center hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
-                      whileHover={{ backgroundColor: "#e8e6d9", dark: { backgroundColor: "#2a2a2a" } }}
                     >
                       <div className="flex items-center">
-                        <EnvelopeIcon className="w-5 h-5 mr-3" />
+                        <EnvelopeIcon className="w-5 h-5 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                         <span className="text-[#202020] dark:text-[#f2f0e3]">{member}</span>
                       </div>
                       <motion.button
                         onClick={() => handleRemoveMember(member)}
-                        className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm py-1 px-3"
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm py-2 px-3 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -344,17 +320,17 @@ export default function WorkspaceSettings() {
           
           <div>
             <h3 className="text-lg font-medium mb-4 text-[#202020] dark:text-[#f2f0e3] flex items-center">
-              <PlusCircleIcon className="w-5 h-5 mr-2" />
+              <PlusCircleIcon className="w-5 h-5 mr-2 text-[#3a3a3a] dark:text-[#d1cfbf]" />
               Add New Member
             </h3>
-            <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-5">
+            <div className="border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-5 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
               <form onSubmit={handleAddMember}>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-grow">
-                    <EnvelopeIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <EnvelopeIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                     <input
                       type="email"
-                      className="w-full py-3 pl-10 pr-4 text-[#202020] dark:text-[#f2f0e3] bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] focus:outline-none focus:ring-1 focus:ring-[#f76f52]"
+                      className="w-full py-3 pl-10 pr-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
                       placeholder="Enter email address"
                       value={newMemberEmail}
                       onChange={(e) => setNewMemberEmail(e.target.value)}
@@ -363,7 +339,7 @@ export default function WorkspaceSettings() {
                   </div>
                   <motion.button
                     type="submit"
-                    className="bg-[#f76f52] text-[#f2f0e3] font-medium py-3 px-6 rounded-md border border-transparent transition-colors shadow-sm hover:bg-[#e55e41] whitespace-nowrap"
+                    className="bg-[#f76f52] text-[#f2f0e3] font-medium py-3 px-6 rounded-md border border-transparent transition-colors shadow-sm hover:bg-[#e55e41] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:ring-offset-2 whitespace-nowrap"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -371,7 +347,7 @@ export default function WorkspaceSettings() {
                   </motion.button>
                 </div>
                 <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] mt-4 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-[#f76f52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   You can add up to 4 members to a workspace (5 total users including yourself).
@@ -385,13 +361,13 @@ export default function WorkspaceSettings() {
       {/* If user is not the owner but a member */}
       {!isOwner && (
         <motion.div 
-          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+          className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 border border-[#d8d6cf] dark:border-[#3a3a3a] shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center mb-6">
-            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4">
+            <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mr-4 border border-[#d8d6cf] dark:border-[#3a3a3a]">
               <UserGroupIcon className="w-6 h-6 text-[#f76f52]" />
             </div>
             <h2 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3]">Workspace Collaboration</h2>
@@ -399,7 +375,7 @@ export default function WorkspaceSettings() {
           
           <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md p-5">
             <div className="flex items-center text-[#3a3a3a] dark:text-[#d1cfbf] mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#f76f52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p>You are a member of this workspace. Only the workspace owner can manage members.</p>
@@ -407,7 +383,7 @@ export default function WorkspaceSettings() {
             
             {owner && (
               <div className="flex items-center mt-4 p-3 bg-[#f2f0e3] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
-                <UserCircleIcon className="w-5 h-5 mr-2" />
+                <UserCircleIcon className="w-5 h-5 mr-2 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                 <div>
                   <span className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf]">Workspace owner:</span>
                   <p className="text-[#202020] dark:text-[#f2f0e3] font-medium">{owner}</p>

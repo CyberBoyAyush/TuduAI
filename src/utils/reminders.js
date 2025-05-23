@@ -103,14 +103,14 @@ export const getUserReminders = async (userId, workspaceId) => {
   if (!userId) return []
   
   try {
-    // Use the service's caching system
-    const reminders = await reminderService.getReminders(userId)
+    const allReminders = await reminderService.getReminders(userId)
     
+    // Filter by workspace if specified
     if (workspaceId) {
-      return reminders.filter(reminder => reminder.workspaceId === workspaceId)
+      return allReminders.filter(reminder => reminder.workspaceId === workspaceId)
     }
     
-    return reminders
+    return allReminders
   } catch (error) {
     console.error('Error getting user reminders:', error)
     return []
