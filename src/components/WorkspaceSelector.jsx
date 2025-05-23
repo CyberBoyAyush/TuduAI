@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { 
   PlusIcon, 
-  PencilIcon, 
   TrashIcon, 
   XMarkIcon,
   ChevronUpIcon,
@@ -42,9 +41,9 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   const isDarkMode = theme === 'dark'
   
   const [newWorkspaceName, setNewWorkspaceName] = useState('')
+  const [newWorkspaceIcon, setNewWorkspaceIcon] = useState('📋')
   const [isAdding, setIsAdding] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editingName, setEditingName] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
   
   // Detect if user is on Mac or Windows/Linux
   const isMac = useMemo(() => {
@@ -64,26 +63,14 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
     
     if (newWorkspaceName.trim()) {
       try {
-        addWorkspace(newWorkspaceName.trim())
+        addWorkspace(newWorkspaceName.trim(), newWorkspaceIcon)
         setNewWorkspaceName('')
+        setNewWorkspaceIcon('📋')
+        setShowCreateModal(false)
         setIsAdding(false)
       } catch (error) {
         alert(error.message)
       }
-    }
-  }
-  
-  const handleSubmitEdit = (e, id) => {
-    e.preventDefault()
-    if (!updateWorkspace) {
-      console.error("Workspace context not fully initialized");
-      return;
-    }
-    
-    if (editingName.trim()) {
-      updateWorkspace(id, { name: editingName.trim() })
-      setEditingId(null)
-      setEditingName('')
     }
   }
   
@@ -141,11 +128,6 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   
   const cancelDelete = () => {
     setDeletingWorkspaceId(null);
-  }
-  
-  const startEditing = (workspace) => {
-    setEditingId(workspace.id)
-    setEditingName(workspace.name)
   }
   
   const goToWorkspaceSettings = (workspaceId) => {
@@ -266,113 +248,69 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                   <div>
                     {ownedWorkspaces.map((workspace, index) => (
                       <div key={workspace.id || workspace.$id} className="relative">
-                        {editingId === workspace.id ? (
-                          <form onSubmit={(e) => handleSubmitEdit(e, workspace.id)} className="p-2 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
-                            <div className="flex relative">
-                              <input
-                                type="text"
-                                value={editingName}
-                                onChange={e => setEditingName(e.target.value)}
-                                className="flex-1 text-sm p-2 pl-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md focus:outline-none focus:ring-1 focus:ring-[#f76f52] bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] pr-10"
-                                autoFocus
-                                maxLength={20}
-                              />
-                              <motion.button
-                                type="submit"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 w-7 h-7 bg-[#f76f52] text-[#f2f0e3] rounded-md flex items-center justify-center hover:bg-[#e55e41]"
-                              >
-                                <PencilIcon className="w-3.5 h-3.5" />
-                              </motion.button>
-                            </div>
-                            <div className="flex justify-between mt-2 text-xs text-[#3a3a3a] dark:text-[#d1cfbf]">
-                              <span>{editingName.length}/20</span>
-                              <button 
-                                onClick={() => setEditingId(null)}
-                                className="text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3]"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </form>
-                        ) : (
-                          <div 
-                            className={`group flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors ${
-                              (workspace.id === activeWorkspaceId || workspace.$id === activeWorkspaceId)
-                                ? 'bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3]'
-                                : 'hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] text-[#3a3a3a] dark:text-[#d1cfbf]'
-                            }`}
-                            onClick={() => {
-                              if (switchWorkspace) {
-                                switchWorkspace(workspace.$id || workspace.id);
-                                onClose();
-                              } else {
-                                console.error("Workspace context not fully initialized");
-                              }
-                            }}
-                          >
-                            <div className="flex items-center overflow-hidden">
-                              <span className="w-6 h-6 flex items-center justify-center text-center mr-2 flex-shrink-0">
-                                {workspace.icon || '📋'}
+                        <div 
+                          className={`group flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors ${
+                            (workspace.id === activeWorkspaceId || workspace.$id === activeWorkspaceId)
+                              ? 'bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#202020] dark:text-[#f2f0e3]'
+                              : 'hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] text-[#3a3a3a] dark:text-[#d1cfbf]'
+                          }`}
+                          onClick={() => {
+                            if (switchWorkspace) {
+                              switchWorkspace(workspace.$id || workspace.id);
+                              onClose();
+                            } else {
+                              console.error("Workspace context not fully initialized");
+                            }
+                          }}
+                        >
+                          <div className="flex items-center overflow-hidden">
+                            <span className="w-6 h-6 flex items-center justify-center text-center mr-2 flex-shrink-0">
+                              {workspace.icon || '📋'}
+                            </span>
+                            <span className="truncate font-medium">{workspace.name}</span>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            {index < 5 && (
+                              <span className="text-xs bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#3a3a3a] dark:text-[#d1cfbf] py-0.5 px-1.5 rounded-md ml-1.5 font-sans">
+                                {isMac ? `⌥${index + 1}` : `Alt+${index + 1}`}
                               </span>
-                              <span className="truncate font-medium">{workspace.name}</span>
-                            </div>
+                            )}
                             
-                            <div className="flex items-center">
-                              {index < 5 && (
-                                <span className="text-xs bg-[#e8e6d9] dark:bg-[#2a2a2a] text-[#3a3a3a] dark:text-[#d1cfbf] py-0.5 px-1.5 rounded-md ml-1.5 font-sans">
-                                  {isMac ? `⌥${index + 1}` : `Alt+${index + 1}`}
-                                </span>
-                              )}
+                            {/* Show buttons on hover */}
+                            <div className="flex ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {/* Settings button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  goToWorkspaceSettings(workspace.$id || workspace.id);
+                                }}
+                                className="p-1 text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] transition-colors"
+                                title="Workspace settings"
+                              >
+                                <Cog6ToothIcon className="w-3.5 h-3.5" />
+                              </button>
                               
-                              {/* Show buttons on hover */}
-                              <div className="flex ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {/* Settings button */}
-                                <button
+                              {/* Show delete button only if not the default workspace */}
+                              {!workspace.isDefault ? (
+                                <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    goToWorkspaceSettings(workspace.$id || workspace.id);
+                                    handleDelete(workspace.id);
                                   }}
-                                  className="p-1 text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] transition-colors"
-                                  title="Workspace settings"
+                                  className="p-1 text-[#3a3a3a] hover:text-red-500 dark:text-[#d1cfbf] dark:hover:text-red-400 transition-colors"
+                                  title="Delete workspace"
                                 >
-                                  <Cog6ToothIcon className="w-3.5 h-3.5" />
+                                  <TrashIcon className="w-3.5 h-3.5" />
                                 </button>
-                                
-                                {/* Edit button */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditing(workspace);
-                                  }}
-                                  className="p-1 text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] transition-colors"
-                                  title="Edit workspace name"
-                                >
-                                  <PencilIcon className="w-3.5 h-3.5" />
-                                </button>
-                                
-                                {/* Show delete button only if not the default workspace */}
-                                {!workspace.isDefault ? (
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(workspace.id);
-                                    }}
-                                    className="p-1 text-[#3a3a3a] hover:text-red-500 dark:text-[#d1cfbf] dark:hover:text-red-400 transition-colors"
-                                    title="Delete workspace"
-                                  >
-                                    <TrashIcon className="w-3.5 h-3.5" />
-                                  </button>
-                                ) : (
-                                  <div className="p-1 text-[#d8d6cf] dark:text-[#3a3a3a] cursor-not-allowed" title="Cannot delete default workspace">
-                                    <TrashIcon className="w-3.5 h-3.5" />
-                                  </div>
-                                )}
-                              </div>
+                              ) : (
+                                <div className="p-1 text-[#d8d6cf] dark:text-[#3a3a3a] cursor-not-allowed" title="Cannot delete default workspace">
+                                  <TrashIcon className="w-3.5 h-3.5" />
+                                </div>
+                              )}
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -434,57 +372,18 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                   )}
                   
                   {/* Add new workspace button */}
-                  {isAdding ? (
-                    <div className="p-3 bg-[#e8e6d9] dark:bg-[#2a2a2a] mt-2 border-t border-[#d8d6cf] dark:border-[#3a3a3a]">
-                      <form onSubmit={handleSubmitNewWorkspace}>
-                        <div className="flex relative">
-                          <input
-                            type="text"
-                            value={newWorkspaceName}
-                            onChange={e => setNewWorkspaceName(e.target.value)}
-                            placeholder="New workspace name"
-                            className="w-full p-2.5 pl-3 pr-10 text-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md 
-                            focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent 
-                            bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
-                            autoFocus
-                            maxLength={20}
-                          />
-                          <motion.button
-                            type="submit"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 
-                            bg-[#f76f52] text-[#f2f0e3] rounded-md flex items-center justify-center
-                            hover:bg-[#e55e41] shadow-sm"
-                          >
-                            <PlusIcon className="w-5 h-5" />
-                          </motion.button>
-                        </div>
-                        <div className="flex justify-between mt-2 text-xs text-[#3a3a3a] dark:text-[#d1cfbf]">
-                          <span>{newWorkspaceName.length}/20</span>
-                          <button 
-                            onClick={() => setIsAdding(false)}
-                            className="text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3]"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
+                  {ownedWorkspaces.length < 5 && (
+                    <div className="mt-2 border-t border-[#d8d6cf] dark:border-[#3a3a3a]">
+                      <motion.button
+                        className="w-full px-4 py-3 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
+                        onClick={() => setShowCreateModal(true)}
+                        whileHover={{ backgroundColor: 'rgba(229, 231, 235, 0.7)' }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <FolderPlusIcon className="w-4 h-4 mr-2 text-[#f76f52]" />
+                        <span className="font-medium">New Workspace</span>
+                      </motion.button>
                     </div>
-                  ) : (
-                    ownedWorkspaces.length < 5 && (
-                      <div className="mt-2 border-t border-[#d8d6cf] dark:border-[#3a3a3a]">
-                        <motion.button
-                          className="w-full px-4 py-3 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
-                          onClick={() => setIsAdding(true)}
-                          whileHover={{ backgroundColor: 'rgba(229, 231, 235, 0.7)', dark: { backgroundColor: 'rgba(17, 24, 39, 0.7)' } }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <FolderPlusIcon className="w-4 h-4 mr-2 text-[#f76f52]" />
-                          <span className="font-medium">New Workspace</span>
-                        </motion.button>
-                      </div>
-                    )
                   )}
                 </>
               )}
@@ -492,6 +391,98 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Create Workspace Modal */}
+      {showCreateModal && createPortal(
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm font-sans"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <motion.div
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md p-6 shadow-xl max-w-md w-full mx-4 border border-[#d8d6cf] dark:border-[#3a3a3a]"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3] flex items-center">
+                <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] p-2 rounded-md mr-3 border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                  <FolderPlusIcon className="w-5 h-5 text-[#f76f52]" />
+                </div>
+                Create Workspace
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] p-1 rounded-full hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitNewWorkspace} className="space-y-4">
+              <div>
+                <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2">
+                  Workspace Name
+                </label>
+                <input
+                  type="text"
+                  value={newWorkspaceName}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                  placeholder="Enter workspace name"
+                  className="w-full p-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent"
+                  maxLength={20}
+                  required
+                  autoFocus
+                />
+                <div className="mt-1 text-xs text-[#3a3a3a] dark:text-[#d1cfbf] text-right">
+                  {newWorkspaceName.length}/20
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2">
+                  Icon (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newWorkspaceIcon}
+                  onChange={(e) => setNewWorkspaceIcon(e.target.value)}
+                  placeholder="📋"
+                  className="w-full p-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent"
+                  maxLength={4}
+                />
+                <p className="mt-1 text-xs text-[#3a3a3a] dark:text-[#d1cfbf]">
+                  Choose an emoji to represent your workspace
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <motion.button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-[#3a3a3a] dark:text-[#d1cfbf] bg-[#e8e6d9] dark:bg-[#2a2a2a] hover:bg-[#d8d6cf] dark:hover:bg-[#333333] rounded-md transition-colors border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  type="submit"
+                  className="px-4 py-2 bg-[#f76f52] text-[#f2f0e3] rounded-md hover:bg-[#e55e41] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={!newWorkspaceName.trim()}
+                >
+                  Create Workspace
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
 
       {/* Delete modal rendered via portal */}
       {deleteModal}

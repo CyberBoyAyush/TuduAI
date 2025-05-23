@@ -81,6 +81,10 @@ export const workspaceService = {
         return await this.createDefaultWorkspace(userId);
       }
 
+      // Get the user's email for the ownerEmail field
+      const user = await account.get();
+      const userEmail = user.email;
+
       // Generate a string ID
       const docId = crypto.randomUUID();
       
@@ -97,7 +101,8 @@ export const workspaceService = {
           color: color,
           userId: userId,
           isDefault: isDefault,
-          members: [] // Initialize empty members array
+          members: [], // Initialize empty members array
+          ownerEmail: userEmail // Add owner's email
         }
       );
       
@@ -268,6 +273,10 @@ export const workspaceService = {
         return existingDefaults[0];
       }
       
+      // Get the user's email for the ownerEmail field
+      const user = await account.get();
+      const userEmail = user.email;
+      
       // Otherwise create a new default workspace
       const docId = crypto.randomUUID();
       
@@ -282,7 +291,8 @@ export const workspaceService = {
           color: 'indigo',
           userId: userId,
           isDefault: true,
-          members: [] // Initialize empty members array
+          members: [], // Initialize empty members array
+          ownerEmail: userEmail // Add owner's email
         }
       );
       
@@ -442,14 +452,18 @@ export const workspaceService = {
         throw new Error('You do not have permission to view this workspace');
       }
       
-      // Get the owner's email instead of just returning the userId
-      let ownerEmail = '';
-      try {
-        const ownerUser = await account.get(workspace.userId);
-        ownerEmail = ownerUser.email;
-      } catch (error) {
-        console.error('Error fetching workspace owner email:', error);
-        ownerEmail = workspace.userId; // Fallback to userId if email fetch fails
+      // Use the stored ownerEmail if available, otherwise get it
+      let ownerEmail = workspace.ownerEmail;
+      
+      // If ownerEmail is not available in the document, fetch it
+      if (!ownerEmail) {
+        try {
+          const ownerUser = await account.get(workspace.userId);
+          ownerEmail = ownerUser.email;
+        } catch (error) {
+          console.error('Error fetching workspace owner email:', error);
+          ownerEmail = workspace.userId; // Fallback to userId if email fetch fails
+        }
       }
       
       return {
@@ -463,4 +477,4 @@ export const workspaceService = {
   }
 };
 
-export default workspaceService; 
+export default workspaceService;

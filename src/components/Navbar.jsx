@@ -17,7 +17,6 @@ import {
   Bars3Icon,
   XMarkIcon,
   CheckCircleIcon,
-  Cog6ToothIcon,
   EyeIcon,
   EyeSlashIcon,
   FolderIcon,
@@ -25,9 +24,9 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   BellAlertIcon,
-  BuildingOfficeIcon,
-  UserIcon
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
+import { getUserReminders } from '../utils/reminders'
 
 // Logo component for better reusability
 const Logo = ({ className = "" }) => (
@@ -61,6 +60,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isWorkspaceSelectorOpen, setIsWorkspaceSelectorOpen] = useState(false)
   const [isRemindersPanelOpen, setIsRemindersPanelOpen] = useState(false)
+  const [reminderCount, setReminderCount] = useState(0)
   const location = useLocation()
   const profileRef = useRef(null)
   const workspaceRef = useRef(null)
@@ -152,6 +152,32 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
       };
     }
   }, [currentUser, handleKeyboardShortcuts]);
+  
+  // Load reminder count
+  useEffect(() => {
+    const loadReminderCount = async () => {
+      if (!currentUser || !activeWorkspaceId) {
+        setReminderCount(0)
+        return
+      }
+      
+      try {
+        const reminders = await getUserReminders(currentUser.$id, activeWorkspaceId)
+        // Count only pending reminders (not sent)
+        const pendingCount = reminders.filter(r => r.status !== 'done').length
+        setReminderCount(pendingCount)
+      } catch (error) {
+        console.error('Error loading reminder count:', error)
+        setReminderCount(0)
+      }
+    }
+    
+    loadReminderCount()
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(loadReminderCount, 30000)
+    return () => clearInterval(interval)
+  }, [currentUser, activeWorkspaceId])
   
   return (
     <>
@@ -297,16 +323,31 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 className="p-1.5 sm:p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                aria-label="Your reminders"
+                aria-label={`Your reminders${reminderCount > 0 ? ` (${reminderCount})` : ''}`}
               >
                 <motion.div
                   className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
                   transition={{ duration: 0.2 }}
                 />
-                <BellAlertIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="relative flex items-center justify-center">
+                  <BellAlertIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <AnimatePresence>
+                    {reminderCount > 0 && (
+                      <motion.span
+                        className="absolute -top-1 -right-1 bg-[#f76f52] text-white text-xs font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow-sm"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      >
+                        {reminderCount > 99 ? '99+' : reminderCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
                 <span className="sr-only">Reminders</span>
                 <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200 hidden sm:block">
-                  Reminders
+                  Reminders{reminderCount > 0 && ` (${reminderCount})`}
                 </span>
               </motion.button>
             )}
@@ -397,26 +438,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                         </div>
                       </div>
                       
-                      <div className="py-1">
-                        <Link
-                          to="/profile"
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a]"
-                          onClick={() => setIsProfileOpen(false)}
-                        >
-                          <UserIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
-                          My Profile
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a]"
-                          onClick={() => setIsProfileOpen(false)}
-                        >
-                          <Cog6ToothIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
-                          Settings
-                        </Link>
-                      </div>
-                      
-                      <div className="border-t border-[#d8d6cf] dark:border-[#2a2a2a] py-1 mt-1 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
+                      <div className="border-t border-[#d8d6cf] dark:border-[#2a2a2a] py-1 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
                         <button 
                           onClick={() => {
                             logout()
@@ -464,7 +486,18 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
       {/* Reminders Panel - Moved outside nav for proper z-index stacking */}
       <RemindersPanel 
         isOpen={isRemindersPanelOpen} 
-        onClose={() => setIsRemindersPanelOpen(false)} 
+        onClose={() => {
+          setIsRemindersPanelOpen(false)
+          // Refresh reminder count when panel closes
+          if (currentUser && activeWorkspaceId) {
+            getUserReminders(currentUser.$id, activeWorkspaceId)
+              .then(reminders => {
+                const pendingCount = reminders.filter(r => r.status !== 'done').length
+                setReminderCount(pendingCount)
+              })
+              .catch(error => console.error('Error refreshing reminder count:', error))
+          }
+        }} 
       />
     </>
   )
