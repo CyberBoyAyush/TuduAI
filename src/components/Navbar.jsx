@@ -163,9 +163,54 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               <Logo />
             </Link>
             
-            {/* Workspace selector (only when logged in) */}
+            {/* Mobile Workspace selector (only when logged in and on small screens) */}
             {currentUser && (
-              <div className="ml-5 relative" ref={workspaceRef}>
+              <div className="ml-2 relative sm:hidden" ref={workspaceRef}>
+                <motion.button
+                  onClick={() => setIsWorkspaceSelectorOpen(!isWorkspaceSelectorOpen)}
+                  className="flex items-center space-x-1 px-2 py-1.5 rounded-md bg-[#e8e6d9] dark:bg-[#2a2a2a] hover:bg-[#dbd9cc] dark:hover:bg-[#333333] text-[#202020] dark:text-[#f2f0e3] transition-all text-xs border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  aria-expanded={isWorkspaceSelectorOpen}
+                  aria-label="Select workspace"
+                >
+                  <BuildingOfficeIcon className="w-3 h-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
+                  <span className="font-medium max-w-[60px] truncate text-xs">
+                    {activeWorkspace?.name || 'Default'}
+                  </span>
+                  <motion.span 
+                    animate={{ rotate: isWorkspaceSelectorOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-[#3a3a3a] dark:text-[#d1cfbf]"
+                  >
+                    <ChevronDownIcon className="w-3 h-3" />
+                  </motion.span>
+                </motion.button>
+                
+                {/* Mobile Workspace selector dropdown */}
+                <AnimatePresence>
+                  {isWorkspaceSelectorOpen && (
+                    <motion.div 
+                      className="absolute left-0 mt-2 z-50"
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    >
+                      <WorkspaceSelector
+                        isOpen={isWorkspaceSelectorOpen}
+                        onClose={() => setIsWorkspaceSelectorOpen(false)}
+                        theme={theme}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+            
+            {/* Desktop Workspace selector (only when logged in and on larger screens) */}
+            {currentUser && (
+              <div className="ml-3 sm:ml-5 relative hidden sm:block" ref={workspaceRef}>
                 <motion.button
                   onClick={() => setIsWorkspaceSelectorOpen(!isWorkspaceSelectorOpen)}
                   className="flex items-center space-x-2 px-3.5 py-2 rounded-md bg-[#e8e6d9] dark:bg-[#2a2a2a] hover:bg-[#dbd9cc] dark:hover:bg-[#333333] text-[#202020] dark:text-[#f2f0e3] transition-all text-sm border border-[#d8d6cf] dark:border-[#3a3a3a]"
@@ -194,7 +239,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                   </motion.span>
                 </motion.button>
                 
-                {/* Workspace selector dropdown */}
+                {/* Desktop Workspace selector dropdown */}
                 <AnimatePresence>
                   {isWorkspaceSelectorOpen && (
                     <motion.div 
@@ -222,7 +267,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {currentUser && location.pathname === '/todo' && (
               <motion.button
                 onClick={toggleShowCompletedTasks}
-                className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
+                className="p-1.5 sm:p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label={showCompletedTasks ? "Hide completed tasks" : "Show completed tasks"}
@@ -234,12 +279,12 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                   transition={{ duration: 0.2 }}
                 />
                 {showCompletedTasks ? (
-                  <EyeSlashIcon className="w-5 h-5" />
+                  <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 ) : (
-                  <EyeIcon className="w-5 h-5" />
+                  <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
                 <span className="sr-only">{showCompletedTasks ? "Hide completed" : "Show completed"}</span>
-                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200 hidden sm:block">
                   {showCompletedTasks ? "Hide" : "Show"}
                 </span>
               </motion.button>
@@ -249,7 +294,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {currentUser && (
               <motion.button
                 onClick={() => setIsRemindersPanelOpen(true)}
-                className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
+                className="p-1.5 sm:p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label="Your reminders"
@@ -258,9 +303,9 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                   className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
                   transition={{ duration: 0.2 }}
                 />
-                <BellAlertIcon className="w-5 h-5" />
+                <BellAlertIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="sr-only">Reminders</span>
-                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+                <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200 hidden sm:block">
                   Reminders
                 </span>
               </motion.button>
@@ -269,7 +314,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             {/* Theme toggle */}
             <motion.button
               onClick={toggleTheme}
-              className="p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
+              className="p-1.5 sm:p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
               whileHover={{ 
                 scale: 1.05, 
                 rotate: theme === 'dark' ? 180 : 0,
@@ -286,12 +331,12 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 transition={{ duration: 0.2 }}
               />
               {theme === 'dark' ? (
-                <SunIcon className="w-5 h-5" />
+                <SunIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               ) : (
-                <MoonIcon className="w-5 h-5" />
+                <MoonIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               )}
               <span className="sr-only">{theme === 'dark' ? "Light mode" : "Dark mode"}</span>
-              <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200">
+              <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200 hidden sm:block">
                 {theme === 'dark' ? "Light" : "Dark"}
               </span>
             </motion.button>
@@ -301,14 +346,14 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               <div className="relative" ref={profileRef}>
                 <motion.button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center space-x-2 py-1.5 px-2 sm:px-3 rounded-md hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-all ml-1"
+                  className="flex items-center space-x-1 sm:space-x-2 py-1.5 px-2 sm:px-3 rounded-md hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-all ml-0.5 sm:ml-1"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   aria-expanded={isProfileOpen}
                   aria-haspopup="true"
                 >
                   <motion.div 
-                    className="w-8 h-8 rounded-md bg-[#f76f52] flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] font-medium text-sm shadow-sm ring-2 ring-[#f2f0e3] dark:ring-[#202020]"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-[#f76f52] flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] font-medium text-xs sm:text-sm shadow-sm ring-2 ring-[#f2f0e3] dark:ring-[#202020]"
                     whileHover={{ scale: 1.08 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -391,10 +436,10 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
             
             {/* Show login/register when no user */}
             {!currentUser && (
-              <div className="flex items-center space-x-2 ml-2">
+              <div className="flex items-center space-x-1 sm:space-x-2 ml-1 sm:ml-2">
                 <Link to="/login">
                   <motion.button
-                    className="px-4 py-2 text-sm font-medium text-[#3a3a3a] dark:text-[#d1cfbf] hover:text-[#202020] dark:hover:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] rounded-md transition-all border border-transparent hover:border-[#d8d6cf] dark:hover:border-[#3a3a3a]"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-[#3a3a3a] dark:text-[#d1cfbf] hover:text-[#202020] dark:hover:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] rounded-md transition-all border border-transparent hover:border-[#d8d6cf] dark:hover:border-[#3a3a3a]"
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                   >
@@ -403,7 +448,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                 </Link>
                 <Link to="/register">
                   <motion.button
-                    className="px-4 py-2 text-sm font-medium text-[#f2f0e3] bg-[#f76f52] hover:bg-[#e55e41] rounded-md shadow-sm"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-[#f2f0e3] bg-[#f76f52] hover:bg-[#e55e41] rounded-md shadow-sm"
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                   >
