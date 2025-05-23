@@ -278,7 +278,7 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                             )}
                             
                             {/* Show buttons on hover */}
-                            <div className="flex ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex ml-1.5">
                               {/* Settings button */}
                               <button
                                 onClick={(e) => {
@@ -351,7 +351,7 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                               
                               <div className="flex items-center">
                                 {/* Show settings button on hover */}
-                                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
