@@ -1,7 +1,6 @@
 // Local development server to handle API requests
 import express from 'express';
 import cors from 'cors';
-import { createServer as createViteServer } from 'vite';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -30,7 +29,7 @@ async function createServer() {
   // Parse JSON request body first
   app.use(bodyParser.json());
   
-  // API routes - register before Vite middleware
+  // API routes
   app.post('/api/parse-task', async (req, res) => {
     try {
       const { prompt } = req.body;
@@ -135,15 +134,6 @@ async function createServer() {
     });
   });
   
-  // Create Vite server in middleware mode
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'spa',
-  });
-  
-  // Use Vite's connect instance as middleware AFTER API routes
-  app.use(vite.middlewares);
-  
   // Serve static assets in production
   if (process.env.NODE_ENV === 'production') {
     const distPath = path.join(__dirname, 'dist');
@@ -157,8 +147,9 @@ async function createServer() {
   
   // Start the server
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`API Server running at http://localhost:${PORT}`);
     console.log(`API endpoint available at http://localhost:${PORT}/api/parse-task`);
+    console.log(`Email endpoint available at http://localhost:${PORT}/api/send-email`);
     console.log(`Press Ctrl+C to stop`);
   });
 }
