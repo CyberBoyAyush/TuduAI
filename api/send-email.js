@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
     console.log('Attempting to send email to:', to);
 
-    // Create Zoho transporter
-    const transporter = nodemailer.createTransporter({
+    // Create Zoho transporter - FIX: Use createTransport, not createTransporter
+    const transporter = nodemailer.createTransport({
       host: process.env.VITE_ZOHO_SMTP_HOST || 'smtp.zoho.com',
       port: parseInt(process.env.VITE_ZOHO_SMTP_PORT) || 465,
       secure: true,
