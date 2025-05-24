@@ -10,6 +10,7 @@ import ReminderService from './components/ReminderService'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ResetPassword from './pages/ResetPassword'
 import Todo from './pages/Todo'
 import WorkspaceSettings from './pages/WorkspaceSettings'
 import { AuthProvider } from './context/AuthContext'
@@ -67,6 +68,7 @@ function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route 
                       path="/todo" 
                       element={

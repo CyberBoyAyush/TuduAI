@@ -12,6 +12,7 @@ import {
   PlusCircleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { sendWorkspaceInvitation } from '../lib/zohoMailer';
 
 export default function WorkspaceSettings() {
   const { workspaceId } = useParams();
@@ -112,7 +113,22 @@ export default function WorkspaceSettings() {
 
     try {
       await addWorkspaceMember(workspaceId, newMemberEmail);
-      setSuccess(`${newMemberEmail} added to workspace`);
+      
+      // Send invitation email
+      try {
+        await sendWorkspaceInvitation({
+          recipientEmail: newMemberEmail,
+          workspaceName: workspace.name,
+          ownerName: currentUser.name || currentUser.email.split('@')[0],
+          ownerEmail: currentUser.email,
+          workspaceIcon: workspace.icon || '📋'
+        });
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // Don't fail the whole operation if email fails
+      }
+      
+      setSuccess(`${newMemberEmail} added to workspace and invitation sent`);
       setNewMemberEmail('');
       
       // Refresh members list

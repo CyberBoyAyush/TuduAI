@@ -88,7 +88,51 @@ export const authService = {
     } catch (error) {
       return false;
     }
-  }
+  },
+
+  // Request password recovery
+  async forgotPassword(email) {
+    try {
+      // Use Appwrite's password recovery endpoint
+      await account.createRecovery(
+        email,
+        // URL the user will be redirected to after clicking the recovery link
+        `${window.location.origin}/reset-password` // Appwrite will append userId and secret as query params
+      );
+      
+      return { 
+        success: true, 
+        message: 'Password recovery email sent. Please check your inbox.' 
+      };
+    } catch (error) {
+      console.error("Password recovery error:", error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to send recovery email. Please try again.' 
+      };
+    }
+  },
+
+  // Complete the password recovery process
+  async resetPassword(userId, secret, password, passwordAgain) {
+    try {
+      if (password !== passwordAgain) {
+        return { success: false, message: 'Passwords do not match' };
+      }
+      
+      await account.updateRecovery(userId, secret, password, passwordAgain);
+      return { 
+        success: true, 
+        message: 'Password has been reset successfully. You can now log in.' 
+      };
+    } catch (error) {
+      console.error("Password reset error:", error);
+      return { 
+        success: false, 
+        message: error.message || 'Failed to reset password. Please try again.' 
+      };
+    }
+  },
 };
 
-export default authService; 
+export default authService;
