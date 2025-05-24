@@ -5,23 +5,27 @@
 import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getDueReminders, updateReminderStatus } from '../utils/reminders'
+import { sendReminderEmail } from '../lib/zohoMailer'
 
 /**
  * Send an email notification for a reminder
  * @param {Object} reminder - The reminder object
  * @returns {Promise<boolean>} - Whether the email was sent successfully
  */
-const sendReminderEmail = async (reminder) => {
-  // In a real application, you would connect to a backend service to send emails
-  // Mock email functionality - removed logging
-  
-  return new Promise((resolve) => {
-    // Simulate network request
-    setTimeout(() => {
-      // In a real app, you'd check for API response here
-      resolve(true)
-    }, 500)
-  })
+const sendEmailNotification = async (reminder) => {
+  try {
+    await sendReminderEmail({
+      userEmail: reminder.userEmail,
+      reminderTitle: reminder.taskTitle,
+      reminderBody: reminder.text,
+      dueDate: reminder.dueDate,
+      userName: reminder.userName
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to send reminder email:', error);
+    return false;
+  }
 }
 
 /**
@@ -35,7 +39,7 @@ const processDueReminders = async (userId) => {
     const processPromises = dueReminders.map(async (reminder) => {
       try {
         // Send the email notification
-        const emailSent = await sendReminderEmail(reminder)
+        const emailSent = await sendEmailNotification(reminder)
         
         if (emailSent) {
           // Update the reminder status

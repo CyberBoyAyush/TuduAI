@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-modules server.js",
+    "dev": "concurrently \"npm run server\" \"vite\"",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "NODE_ENV=production node server.js",
-    "update-schema": "node scripts/update-schema.js"
+    "update-schema": "node scripts/update-schema.js",
+    "server": "node server.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -21,15 +22,17 @@
     "appwrite": "^18.1.0",
     "body-parser": "^1.20.3",
     "dotenv": "^16.5.0",
-    "express": "^4.21.2",
+    "express": "^4.18.2",
     "framer-motion": "^12.12.1",
     "node-appwrite": "^12.0.0",
+    "nodemailer": "^6.9.7",
     "openai": "^4.100.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0",
     "tailwindcss": "^4.1.7",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
@@ -40,6 +43,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "concurrently": "^8.2.2"
   }
 }
