@@ -10,7 +10,8 @@ import { useWorkspace } from '../context/WorkspaceContext'
 import useTasks from '../hooks/useTasks'
 import TaskInput from '../components/TaskInput'
 import TaskList, { COLUMN_IDS } from '../components/TaskList'
-import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import TaskListByUrgency, { URGENCY_COLUMN_IDS } from '../components/TaskListByUrgency'
+import { PlusIcon, ArrowPathIcon, CalendarDaysIcon, FlagIcon } from '@heroicons/react/24/outline'
 import { 
   DndContext, 
   DragOverlay,
@@ -51,6 +52,7 @@ export default function Todo({ showCompletedTasks }) {
   const [addingTaskStatus, setAddingTaskStatus] = useState(null)
   const [activeDragId, setActiveDragId] = useState(null)
   const [activeDroppableId, setActiveDroppableId] = useState(null)
+  const [viewMode, setViewMode] = useState('date') // 'date' or 'urgency'
   const [taskOrders, setTaskOrders] = useState({
     today: [],
     upcoming: [],
@@ -145,6 +147,20 @@ export default function Todo({ showCompletedTasks }) {
     }
   };
   
+  // Calculate new urgency for task when moved to urgency column
+  const calculateNewUrgency = (columnId) => {
+    switch(columnId) {
+      case URGENCY_COLUMN_IDS.HIGH:
+        return 4.5;
+      case URGENCY_COLUMN_IDS.MEDIUM:
+        return 3.0;
+      case URGENCY_COLUMN_IDS.LOW:
+        return 1.5;
+      default:
+        return 3.0;
+    }
+  };
+  
   // Get the column ID for a task
   const getTaskColumn = (task) => {
     if (!task.dueDate) {
@@ -197,9 +213,13 @@ export default function Todo({ showCompletedTasks }) {
       return;
     }
     
-    // Check if we're dropping directly onto a column
-    if (Object.values(COLUMN_IDS).includes(over.id)) {
-      // Update the task with a new due date based on the column
+    // Check if we're dropping onto an urgency column
+    if (Object.values(URGENCY_COLUMN_IDS).includes(over.id)) {
+      const newUrgency = calculateNewUrgency(over.id);
+      updateTask(draggedTask.$id, { urgency: newUrgency });
+    }
+    // Check if we're dropping directly onto a date column
+    else if (Object.values(COLUMN_IDS).includes(over.id)) {
       const newDueDate = calculateNewDueDate(over.id);
       updateTask(draggedTask.$id, { dueDate: newDueDate });
     } 
@@ -312,18 +332,51 @@ export default function Todo({ showCompletedTasks }) {
         </div>
       </motion.div>
       
-      {/* Refresh button and section header */}
+      {/* View toggle and refresh button */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-primary-700">Your Tasks</h2>
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-bold text-primary-700">Your Tasks</h2>
+          
+          {/* View Mode Toggle */}
+          <div className="flex bg-primary-100 rounded-md border border-primary-300 p-1">
+            <motion.button
+              onClick={() => setViewMode('date')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              title="View by Date"
+              className={`flex items-center justify-center p-1.5 md:p-2 rounded-sm transition-colors ${
+                viewMode === 'date' 
+                  ? 'bg-primary-500 text-white' 
+                  : 'text-primary-700 hover:bg-primary-200'
+              }`}
+            >
+              <CalendarDaysIcon className="w-4 h-4 md:w-5 md:h-5" />
+            </motion.button>
+            <motion.button
+              onClick={() => setViewMode('urgency')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              title="View by Priority"
+              className={`flex items-center justify-center p-1.5 md:p-2 rounded-sm transition-colors ${
+                viewMode === 'urgency' 
+                  ? 'bg-primary-500 text-white' 
+                  : 'text-primary-700 hover:bg-primary-200'
+              }`}
+            >
+              <FlagIcon className="w-4 h-4 md:w-5 md:h-5" />
+            </motion.button>
+          </div>
+        </div>
+        
         <motion.button
           onClick={refreshTasks}
           disabled={refreshing}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center px-3 py-2 bg-primary-100 text-primary-700 rounded-md border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm"
+          className="flex items-center px-2 py-1.5 md:px-3 md:py-2 bg-primary-100 text-primary-700 rounded-md border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm"
         >
-          <ArrowPathIcon className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          <span className="text-sm font-medium">Refresh Tasks</span>
+          <ArrowPathIcon className={`w-4 h-4 md:w-5 md:h-5 ${refreshing ? 'animate-spin' : ''} ${window.innerWidth < 640 ? '' : 'mr-2'}`} />
+          <span className="text-xs md:text-sm font-medium hidden sm:inline">Refresh Tasks</span>
         </motion.button>
       </div>
       
@@ -355,17 +408,31 @@ export default function Todo({ showCompletedTasks }) {
           },
         }}
       >
-        <TaskList
-          tasks={tasks}
-          onUpdate={updateTask}
-          onDelete={deleteTask}
-          onAddComment={addComment}
-          onDeleteComment={deleteComment}
-          showCompletedTasks={showCompletedTasks}
-          activeDroppableId={activeDroppableId}
-          taskOrders={taskOrders}
-          onTaskReorder={handleTaskReorder}
-        />
+        {viewMode === 'date' ? (
+          <TaskList
+            tasks={tasks}
+            onUpdate={updateTask}
+            onDelete={deleteTask}
+            onAddComment={addComment}
+            onDeleteComment={deleteComment}
+            showCompletedTasks={showCompletedTasks}
+            activeDroppableId={activeDroppableId}
+            taskOrders={taskOrders}
+            onTaskReorder={handleTaskReorder}
+          />
+        ) : (
+          <TaskListByUrgency
+            tasks={tasks}
+            onUpdate={updateTask}
+            onDelete={deleteTask}
+            onAddComment={addComment}
+            onDeleteComment={deleteComment}
+            showCompletedTasks={showCompletedTasks}
+            activeDroppableId={activeDroppableId}
+            taskOrders={taskOrders}
+            onTaskReorder={handleTaskReorder}
+          />
+        )}
         
         {/* Drag overlay to show the task being dragged */}
         <DragOverlay 
