@@ -15,8 +15,12 @@ import {
   InformationCircleIcon,
   ClockIcon,
   ExclamationCircleIcon,
-  ArrowUpIcon
+  ArrowUpIcon,
+  CalendarIcon,
+  CheckIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
+import { createPortal } from 'react-dom'
 
 // Helper function to format task data as XML tags
 const formatTaskAsXML = (taskData) => {
@@ -69,6 +73,9 @@ export default function TaskInput({ onAddTask }) {
   const [urgency, setUrgency] = useState(3)
   const [showTips, setShowTips] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showPastDateDialog, setShowPastDateDialog] = useState(false)
+  const [pastDateTask, setPastDateTask] = useState(null)
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
   const inputRef = useRef(null)
   
   // Focus input when expanded
@@ -77,6 +84,34 @@ export default function TaskInput({ onAddTask }) {
       inputRef.current.focus()
     }
   }, [isExpanded])
+
+  // Function to check if a date is in the past
+  const isPastDate = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return date < now;
+  }
+
+  // Function to adjust date to future
+  const adjustToFuture = (dateString) => {
+    if (!dateString) return null;
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // If it's the same day but earlier time
+    if (date.toDateString() === now.toDateString()) {
+      date.setDate(date.getDate() + 1);
+    } else {
+      // For past dates (like "Monday" when today is Wednesday)
+      while (date < now) {
+        date.setDate(date.getDate() + 7); // Add a week
+      }
+    }
+    
+    return date.toISOString();
+  }
 
   const handleSubmit = async (e) => {
     e?.preventDefault()
@@ -89,6 +124,14 @@ export default function TaskInput({ onAddTask }) {
     try {
       // Parse the input using OpenAI or fallback parser
       const result = await parseTaskInput(input)
+      
+      // Check if date is in the past
+      if (result.dueDate && isPastDate(result.dueDate)) {
+        setPastDateTask(result);
+        setShowPastDateDialog(true);
+        setLoading(false);
+        return;
+      }
       
       // Store the parsed result
       setParsedTask(result)
@@ -118,9 +161,11 @@ export default function TaskInput({ onAddTask }) {
   const resetForm = () => {
     setInput('')
     setParsedTask(null)
+    setPastDateTask(null)
     setError(null)
     setIsExpanded(false)
     setIsSaving(false)
+    setShowPastDateDialog(false)
   }
   
   const finalizeTask = async (updates = {}) => {
@@ -139,6 +184,69 @@ export default function TaskInput({ onAddTask }) {
       setIsSaving(false);
     }
   }
+
+  // Handle past date dialog actions
+  const handleKeepPastDate = async () => {
+    try {
+      setIsSaving(true);
+      await onAddTask(pastDateTask);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving task with past date:', error);
+      setError('Failed to save task. Please try again.');
+    } finally {
+      setIsSaving(false);
+      setShowPastDateDialog(false);
+    }
+  }
+
+  // Show custom date picker when user clicks "Adjust to Future"
+  const handleShowCustomDatePicker = () => {
+    setShowCustomDatePicker(true);
+    setShowPastDateDialog(false);
+  }
+  
+  // Handle selection of custom date
+  const handleCustomDateSelection = async (date) => {
+    if (!date) return;
+    
+    try {
+      setIsSaving(true);
+      
+      const adjustedTask = {
+        ...pastDateTask,
+        dueDate: new Date(date).toISOString()
+      };
+      
+      await onAddTask(adjustedTask);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving adjusted task:', error);
+      setError('Failed to save task. Please try again.');
+    } finally {
+      setIsSaving(false);
+      setShowCustomDatePicker(false);
+    }
+  }
+
+  const handleAdjustToFuture = async () => {
+    const adjustedTask = {
+      ...pastDateTask,
+      dueDate: adjustToFuture(pastDateTask.dueDate)
+    };
+    
+    try {
+      setIsSaving(true);
+      await onAddTask(adjustedTask);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving adjusted task:', error);
+      setError('Failed to save task. Please try again.');
+    } finally {
+      setIsSaving(false);
+      setShowPastDateDialog(false);
+    }
+  }
   
   // Preview the AI-parsed task data
   const parsePreview = async () => {
@@ -148,6 +256,14 @@ export default function TaskInput({ onAddTask }) {
     
     try {
       const result = await parseTaskInput(input)
+      
+      // Check if date is in the past
+      if (result.dueDate && isPastDate(result.dueDate)) {
+        setPastDateTask(result);
+        setShowPastDateDialog(true);
+        setLoading(false);
+        return;
+      }
       
       // Ensure all dates are in the future
       if (result.dueDate) {
@@ -215,8 +331,9 @@ export default function TaskInput({ onAddTask }) {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -5 }}
         transition={{ duration: 0.4 }}
-        className={`bg-[#f2f0e3] dark:bg-[#202020] shadow-md backdrop-blur-sm rounded-md overflow-hidden border border-[#d8d6cf] dark:border-[#2a2a2a] transition-all ${
+        className={`bg-[#f2f0e3] dark:bg-[#202020] shadow-md backdrop-blur-sm rounded-md overflow-hidden border border-[#d8d6cf] dark:border-[#3a3a3a] transition-all ${
           isExpanded ? 'p-6' : 'p-4'
         }`}
       >
@@ -230,6 +347,17 @@ export default function TaskInput({ onAddTask }) {
             <TimeSuggestions 
               onSelect={(date) => {
                 try {
+                  // Check if date is in the past
+                  if (isPastDate(date)) {
+                    const updatedTask = {
+                      ...parsedTask,
+                      dueDate: date
+                    };
+                    setPastDateTask(updatedTask);
+                    setShowPastDateDialog(true);
+                    return;
+                  }
+                  
                   // Create a formatted version of the date that would be easily understood in natural language
                   const dateObj = new Date(date);
                   const formattedDate = dateObj.toLocaleString('en-US', {
@@ -634,6 +762,174 @@ export default function TaskInput({ onAddTask }) {
           </form>
         )}
       </motion.div>
+      
+      {/* Past Date Dialog */}
+      {showPastDateDialog && createPortal(
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm font-sans"
+          onClick={() => setShowPastDateDialog(false)}
+        >
+          <motion.div
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md shadow-xl max-w-md w-full mx-4 z-[100000] border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ 
+              type: "spring", 
+              damping: 25, 
+              stiffness: 350 
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-orange-100 to-orange-50 dark:from-orange-900/40 dark:to-orange-800/20 px-6 py-5 border-b border-[#d8d6cf] dark:border-[#3a3a3a] flex items-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 mr-4 border border-orange-200 dark:border-orange-800/60">
+                <CalendarIcon className="h-6 w-6 text-orange-600 dark:text-orange-400" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold leading-6 text-[#202020] dark:text-[#f2f0e3]">
+                  Past Due Date Detected
+                </h3>
+                <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] mt-0.5">
+                  This task is scheduled for a time that's already passed
+                </p>
+              </div>
+              <motion.button
+                onClick={() => setShowPastDateDialog(false)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="ml-auto p-1.5 text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] bg-[#f2f0e3]/80 dark:bg-[#202020]/80 hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </motion.button>
+            </div>
+            
+            {/* Body content */}
+            <div className="px-6 py-5">
+              <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] p-4 rounded-md mb-5 border border-[#d8d6cf] dark:border-[#3a3a3a] shadow-sm">
+                <p className="font-medium text-[#202020] dark:text-[#f2f0e3] text-base line-clamp-2">{pastDateTask?.title}</p>
+                <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-[#d8d6cf] dark:border-[#3a3a3a]">
+                  <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] flex items-center">
+                    <ClockIcon className="w-4 h-4 mr-2 text-orange-500" />
+                    {pastDateTask?.dueDate && new Date(pastDateTask.dueDate).toLocaleString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full font-medium">
+                    Past date
+                  </span>
+                </div>
+              </div>
+              
+              <div className="bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800/20 rounded-md p-3.5 mb-5">
+                <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] flex items-start">
+                  <InformationCircleIcon className="w-5 h-5 mr-2 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <span>
+                    Would you like to <span className="font-medium text-[#202020] dark:text-[#f2f0e3]">keep this past date</span> or <span className="font-medium text-[#202020] dark:text-[#f2f0e3]">choose a different date</span>?
+                  </span>
+                </p>
+              </div>
+            </div>
+            
+            {/* Footer with actions */}
+            <div className="px-6 py-4 bg-[#e8e6d9] dark:bg-[#2a2a2a] border-t border-[#d8d6cf] dark:border-[#3a3a3a] flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <motion.button
+                onClick={handleKeepPastDate}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex justify-center items-center rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] bg-[#f2f0e3] dark:bg-[#202020] px-4 py-2.5 text-sm font-medium text-[#3a3a3a] dark:text-[#d1cfbf] shadow-sm hover:bg-[#dbd9cc] dark:hover:bg-[#333333] focus:outline-none focus:ring-1 focus:ring-[#f76f52] flex-1 sm:flex-initial sm:flex-grow"
+              >
+                <CheckIcon className="w-4 h-4 mr-2" />
+                Keep Past Date
+              </motion.button>
+              
+              <motion.button
+                onClick={handleShowCustomDatePicker}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex justify-center items-center rounded-md border border-transparent bg-[#f76f52] px-4 py-2.5 text-sm font-medium text-[#f2f0e3] shadow-sm hover:bg-[#e55e41] focus:outline-none focus:ring-1 focus:ring-[#f76f52] flex-1 sm:flex-initial sm:flex-grow"
+              >
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                Choose New Date
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {/* Custom Date Picker Modal */}
+      {showCustomDatePicker && createPortal(
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm font-sans"
+          onClick={() => setShowCustomDatePicker(false)}
+        >
+          <motion.div
+            className="bg-[#f2f0e3] dark:bg-[#202020] rounded-md shadow-xl max-w-md w-full mx-4 z-[100000] border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#f76f52]/20 to-[#f76f52]/10 dark:from-[#f76f52]/30 dark:to-[#f76f52]/20 px-6 py-5 border-b border-[#d8d6cf] dark:border-[#3a3a3a] flex items-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f76f52]/20 dark:bg-[#f76f52]/30 mr-4 border border-[#f76f52]/30 dark:border-[#f76f52]/40">
+                <CalendarIcon className="h-6 w-6 text-[#f76f52]" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold leading-6 text-[#202020] dark:text-[#f2f0e3]">
+                  Choose New Date
+                </h3>
+                <p className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] mt-0.5">
+                  Select a new due date and time for this task
+                </p>
+              </div>
+              <motion.button
+                onClick={() => setShowCustomDatePicker(false)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="ml-auto p-1.5 text-[#3a3a3a] hover:text-[#202020] dark:text-[#d1cfbf] dark:hover:text-[#f2f0e3] bg-[#f2f0e3]/80 dark:bg-[#202020]/80 hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] rounded-full transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </motion.button>
+            </div>
+            
+            {/* Task Preview */}
+            <div className="px-6 pt-5">
+              <div className="bg-[#e8e6d9] dark:bg-[#2a2a2a] p-3 rounded-md mb-4 border border-[#d8d6cf] dark:border-[#3a3a3a]">
+                <p className="text-sm font-medium text-[#202020] dark:text-[#f2f0e3] line-clamp-1">{pastDateTask?.title}</p>
+              </div>
+            </div>
+            
+            {/* Date Picker */}
+            <div className="px-6 pb-5">
+              <TimeSuggestions
+                onSelect={handleCustomDateSelection}
+                initialDate={new Date()}
+                showTitle={false}
+              />
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 bg-[#e8e6d9] dark:bg-[#2a2a2a] border-t border-[#d8d6cf] dark:border-[#3a3a3a] flex justify-end">
+              <motion.button
+                onClick={() => setShowCustomDatePicker(false)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex justify-center items-center rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] bg-[#f2f0e3] dark:bg-[#202020] px-4 py-2.5 text-sm font-medium text-[#3a3a3a] dark:text-[#d1cfbf] shadow-sm hover:bg-[#dbd9cc] dark:hover:bg-[#333333] focus:outline-none focus:ring-1 focus:ring-[#f76f52]"
+              >
+                Cancel
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
