@@ -130,25 +130,49 @@ export default function TaskListByUrgency({
       { high: [], medium: [], low: [] }
     );
     
-    // Sort within each group by urgency (descending) then by due date
+    // Apply custom ordering if available, otherwise sort by urgency and due date
     Object.keys(groups).forEach(key => {
-      groups[key].sort((a, b) => {
-        // First sort by urgency (higher first)
-        if (b.urgency !== a.urgency) {
-          return (b.urgency || 3) - (a.urgency || 3);
-        }
-        // Then by due date (earlier first)
-        if (a.dueDate && b.dueDate) {
-          return new Date(a.dueDate) - new Date(b.dueDate);
-        }
-        if (a.dueDate) return -1;
-        if (b.dueDate) return 1;
-        return 0;
-      });
+      const columnId = key === 'high' 
+        ? URGENCY_COLUMN_IDS.HIGH 
+        : key === 'medium' 
+          ? URGENCY_COLUMN_IDS.MEDIUM 
+          : URGENCY_COLUMN_IDS.LOW;
+      
+      const orderForColumn = taskOrders[columnId] || taskOrders[key] || [];
+      
+      if (orderForColumn.length > 0) {
+        // Create a map for O(1) lookups
+        const taskMap = new Map(groups[key].map(task => [task.$id, task]));
+        
+        // First add tasks that exist in the order
+        const orderedTasks = orderForColumn
+          .filter(id => taskMap.has(id))
+          .map(id => taskMap.get(id));
+        
+        // Then add any tasks that weren't in the order
+        const remainingTasks = groups[key].filter(task => !orderForColumn.includes(task.$id));
+        
+        groups[key] = [...orderedTasks, ...remainingTasks];
+      } else {
+        // Default sorting if no custom order exists
+        groups[key].sort((a, b) => {
+          // First sort by urgency (higher first)
+          if (b.urgency !== a.urgency) {
+            return (b.urgency || 3) - (a.urgency || 3);
+          }
+          // Then by due date (earlier first)
+          if (a.dueDate && b.dueDate) {
+            return new Date(a.dueDate) - new Date(b.dueDate);
+          }
+          if (a.dueDate) return -1;
+          if (b.dueDate) return 1;
+          return 0;
+        });
+      }
     });
     
     return groups;
-  }, [filteredTasks]);
+  }, [filteredTasks, taskOrders]);
   
   const handleTaskClick = (taskId) => {
     setExpandedTaskId(expandedTaskId === taskId ? null : taskId)
