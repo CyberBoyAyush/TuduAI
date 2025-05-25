@@ -56,7 +56,10 @@ export default function Todo({ showCompletedTasks }) {
   const [taskOrders, setTaskOrders] = useState({
     today: [],
     upcoming: [],
-    future: []
+    future: [],
+    high: [],
+    medium: [],
+    low: []
   })
   const navigate = useNavigate()
   
@@ -194,6 +197,14 @@ export default function Todo({ showCompletedTasks }) {
     }));
   }, []);
   
+  // Get the urgency level for a task
+  const getTaskUrgencyLevel = (task) => {
+    const urgency = task.urgency || 3;
+    if (urgency >= 4) return URGENCY_COLUMN_IDS.HIGH;
+    if (urgency >= 2.5) return URGENCY_COLUMN_IDS.MEDIUM;
+    return URGENCY_COLUMN_IDS.LOW;
+  };
+  
   // Handle drag end
   const handleDragEnd = useCallback((event) => {
     const { active, over } = event;
@@ -213,52 +224,85 @@ export default function Todo({ showCompletedTasks }) {
       return;
     }
     
-    // Check if we're dropping onto an urgency column
-    if (Object.values(URGENCY_COLUMN_IDS).includes(over.id)) {
+    // Check if we're dropping onto an urgency column in priority view
+    if (viewMode === 'urgency' && Object.values(URGENCY_COLUMN_IDS).includes(over.id)) {
       const newUrgency = calculateNewUrgency(over.id);
       updateTask(draggedTask.$id, { urgency: newUrgency });
     }
-    // Check if we're dropping directly onto a date column
-    else if (Object.values(COLUMN_IDS).includes(over.id)) {
+    // Check if we're dropping directly onto a date column in date view
+    else if (viewMode === 'date' && Object.values(COLUMN_IDS).includes(over.id)) {
       const newDueDate = calculateNewDueDate(over.id);
       updateTask(draggedTask.$id, { dueDate: newDueDate });
     } 
     // If we're dropping onto another task
-    else {
+    else if (over.id !== active.id) {
       const overTask = getActiveTask(over.id);
       
       if (overTask) {
-        // Get the columns of both tasks
-        const activeColumn = getTaskColumn(draggedTask);
-        const overColumn = getTaskColumn(overTask);
-        
-        // If the tasks are in different columns, move the active task to the over task's column
-        if (activeColumn !== overColumn) {
-          // Update the task with a new due date based on the over task's column
-          const newDueDate = new Date(overTask.dueDate);
-          updateTask(draggedTask.$id, { dueDate: newDueDate });
-        } 
-        // If they're in the same column, handle reordering
-        else {
-          // Get all tasks in this column
-          const columnTasks = tasks.filter(task => getTaskColumn(task) === activeColumn);
+        if (viewMode === 'date') {
+          // Get the columns of both tasks
+          const activeColumn = getTaskColumn(draggedTask);
+          const overColumn = getTaskColumn(overTask);
           
-          // Find the indices of the active and over tasks
-          const activeIndex = columnTasks.findIndex(task => task.$id === active.id);
-          const overIndex = columnTasks.findIndex(task => task.$id === over.id);
+          // If the tasks are in different columns, move the active task to the over task's column
+          if (activeColumn !== overColumn) {
+            // Update the task with a new due date based on the over task's column
+            const newDueDate = new Date(overTask.dueDate);
+            updateTask(draggedTask.$id, { dueDate: newDueDate });
+          } 
+          // If they're in the same column, handle reordering
+          else {
+            // Get all tasks in this column
+            const columnTasks = tasks.filter(task => getTaskColumn(task) === activeColumn);
+            
+            // Find the indices of the active and over tasks
+            const activeIndex = columnTasks.findIndex(task => task.$id === active.id);
+            const overIndex = columnTasks.findIndex(task => task.$id === over.id);
+            
+            if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+              // Reorder the tasks
+              const reorderedTasks = arrayMove(columnTasks, activeIndex, overIndex);
+              
+              // Update the task order state
+              const newOrder = reorderedTasks.map(task => task.$id);
+              handleTaskReorder(activeColumn, newOrder);
+              
+              // Example: If you have a sortOrder field, you could do:
+              // reorderedTasks.forEach((task, index) => {
+              //   updateTask(task.$id, { sortOrder: index });
+              // });
+            }
+          }
+        } else if (viewMode === 'urgency') {
+          // In priority view, dropping on another task within the same urgency level should only reorder
+          // without changing dates
           
-          if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-            // Reorder the tasks
-            const reorderedTasks = arrayMove(columnTasks, activeIndex, overIndex);
+          // Get the urgency level for both tasks
+          const activeUrgencyLevel = getTaskUrgencyLevel(draggedTask);
+          const overUrgencyLevel = getTaskUrgencyLevel(overTask);
+          
+          // If they're in different urgency levels, update the urgency only
+          if (activeUrgencyLevel !== overUrgencyLevel) {
+            // Set urgency similar to the over task
+            updateTask(draggedTask.$id, { urgency: overTask.urgency });
+          }
+          // If in the same urgency level, handle reordering
+          else {
+            // Get all tasks in this urgency level
+            const urgencyLevelTasks = tasks.filter(task => getTaskUrgencyLevel(task) === activeUrgencyLevel);
             
-            // Update the task order state
-            const newOrder = reorderedTasks.map(task => task.$id);
-            handleTaskReorder(activeColumn, newOrder);
+            // Find the indices of the active and over tasks
+            const activeIndex = urgencyLevelTasks.findIndex(task => task.$id === active.id);
+            const overIndex = urgencyLevelTasks.findIndex(task => task.$id === over.id);
             
-            // Example: If you have a sortOrder field, you could do:
-            // reorderedTasks.forEach((task, index) => {
-            //   updateTask(task.$id, { sortOrder: index });
-            // });
+            if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+              // Reorder the tasks
+              const reorderedTasks = arrayMove(urgencyLevelTasks, activeIndex, overIndex);
+              
+              // Update the task order state
+              const newOrder = reorderedTasks.map(task => task.$id);
+              handleTaskReorder(activeUrgencyLevel, newOrder);
+            }
           }
         }
       }
@@ -267,7 +311,7 @@ export default function Todo({ showCompletedTasks }) {
     // Reset active drag state
     setActiveDragId(null);
     setActiveDroppableId(null);
-  }, [getActiveTask, updateTask, tasks, handleTaskReorder]);
+  }, [getActiveTask, updateTask, tasks, handleTaskReorder, viewMode]);
   
   // Redirect to login if not authenticated
   useEffect(() => {

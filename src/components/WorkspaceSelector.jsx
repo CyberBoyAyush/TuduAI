@@ -41,7 +41,6 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
   const isDarkMode = theme === 'dark'
   
   const [newWorkspaceName, setNewWorkspaceName] = useState('')
-  const [newWorkspaceIcon, setNewWorkspaceIcon] = useState('📋')
   const [isAdding, setIsAdding] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   
@@ -63,9 +62,8 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
     
     if (newWorkspaceName.trim()) {
       try {
-        addWorkspace(newWorkspaceName.trim(), newWorkspaceIcon)
+        addWorkspace(newWorkspaceName.trim())
         setNewWorkspaceName('')
-        setNewWorkspaceIcon('📋')
         setShowCreateModal(false)
         setIsAdding(false)
       } catch (error) {
@@ -439,23 +437,6 @@ export default function WorkspaceSelector({ isOpen, onClose, theme }) {
                 <div className="mt-1 text-xs text-[#3a3a3a] dark:text-[#d1cfbf] text-right">
                   {newWorkspaceName.length}/20
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[#202020] dark:text-[#f2f0e3] text-sm font-medium mb-2">
-                  Icon (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={newWorkspaceIcon}
-                  onChange={(e) => setNewWorkspaceIcon(e.target.value)}
-                  placeholder="📋"
-                  className="w-full p-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent"
-                  maxLength={4}
-                />
-                <p className="mt-1 text-xs text-[#3a3a3a] dark:text-[#d1cfbf]">
-                  Choose an emoji to represent your workspace
-                </p>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
