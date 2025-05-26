@@ -128,26 +128,41 @@ export default function Todo({ showCompletedTasks }) {
   };
   
   // Calculate new due date for task when moved to a different column
-  const calculateNewDueDate = (columnId) => {
+  const calculateNewDueDate = (columnId, originalDate = null) => {
     const today = new Date();
+    let newDate;
     
     switch(columnId) {
       case COLUMN_IDS.TODAY:
-        return today;
+        newDate = new Date(today);
+        break;
         
       case COLUMN_IDS.UPCOMING:
-        const upcoming = new Date(today);
-        upcoming.setDate(today.getDate() + 3); // 3 days from now
-        return upcoming;
+        newDate = new Date(today);
+        newDate.setDate(today.getDate() + 3); // 3 days from now
+        break;
         
       case COLUMN_IDS.FUTURE:
-        const future = new Date(today);
-        future.setDate(today.getDate() + 14); // 14 days from now
-        return future;
+        newDate = new Date(today);
+        newDate.setDate(today.getDate() + 14); // 14 days from now
+        break;
         
       default:
-        return today;
+        newDate = new Date(today);
     }
+    
+    // If we have an original date, preserve its time
+    if (originalDate) {
+      const originalDateTime = new Date(originalDate);
+      newDate.setHours(
+        originalDateTime.getHours(),
+        originalDateTime.getMinutes(),
+        originalDateTime.getSeconds(),
+        originalDateTime.getMilliseconds()
+      );
+    }
+    
+    return newDate;
   };
   
   // Calculate new urgency for task when moved to urgency column
@@ -231,7 +246,7 @@ export default function Todo({ showCompletedTasks }) {
     }
     // Check if we're dropping directly onto a date column in date view
     else if (viewMode === 'date' && Object.values(COLUMN_IDS).includes(over.id)) {
-      const newDueDate = calculateNewDueDate(over.id);
+      const newDueDate = calculateNewDueDate(over.id, draggedTask.dueDate);
       updateTask(draggedTask.$id, { dueDate: newDueDate });
     } 
     // If we're dropping onto another task
@@ -248,6 +263,18 @@ export default function Todo({ showCompletedTasks }) {
           if (activeColumn !== overColumn) {
             // Update the task with a new due date based on the over task's column
             const newDueDate = new Date(overTask.dueDate);
+            
+            // Only copy the date part (year, month, day), preserve the original task's time
+            if (draggedTask.dueDate) {
+              const originalDateTime = new Date(draggedTask.dueDate);
+              newDueDate.setHours(
+                originalDateTime.getHours(),
+                originalDateTime.getMinutes(),
+                originalDateTime.getSeconds(),
+                originalDateTime.getMilliseconds()
+              );
+            }
+            
             updateTask(draggedTask.$id, { dueDate: newDueDate });
           } 
           // If they're in the same column, handle reordering
