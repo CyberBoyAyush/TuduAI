@@ -180,12 +180,113 @@ export async function sendWorkspaceInvitation({
 }
 
 /**
+ * Send workspace leave notification email to owner
+ */
+export async function sendWorkspaceLeaveNotification({
+  ownerEmail,
+  workspaceName,
+  memberEmail,
+  memberName = null,
+  workspaceIcon = '📋'
+}) {
+  const subject = `${memberName || memberEmail} left your "${workspaceName}" workspace`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Member Left Workspace</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f2f0e3;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #f76f52 0%, #e55e41 100%); padding: 30px; text-align: center;">
+          <div style="background-color: rgba(255, 255, 255, 0.2); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 36px;">
+            ${workspaceIcon}
+          </div>
+          <h1 style="color: #f2f0e3; margin: 0; font-size: 28px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            Member Left Workspace
+          </h1>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+
+          <!-- Main Message -->
+          <div style="text-align: center; margin-bottom: 35px;">
+            <h2 style="color: #202020; margin: 0 0 16px 0; font-size: 24px; font-weight: 600; line-height: 1.3;">
+              Someone left your workspace
+            </h2>
+            <p style="color: #3a3a3a; margin: 0; font-size: 16px; line-height: 1.6;">
+              <strong style="color: #f76f52;">${memberName || memberEmail}</strong> has left the
+              <strong style="color: #202020;">"${workspaceName}"</strong> workspace.
+            </p>
+          </div>
+
+          <!-- Workspace Info Box -->
+          <div style="background-color: #f2f0e3; border: 1px solid #e8e6d9; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 12px;">${workspaceIcon}</div>
+            <h3 style="color: #202020; margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">
+              ${workspaceName}
+            </h3>
+            <p style="color: #3a3a3a; margin: 0; font-size: 14px;">
+              Member: ${memberEmail}
+            </p>
+          </div>
+
+          <!-- Action Button -->
+          <div style="text-align: center; margin-bottom: 30px;">
+            <a href="https://tuduai.vercel.app/todo" style="display: inline-block; background-color: #f76f52; color: #f2f0e3; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(247, 111, 82, 0.3); transition: all 0.3s ease;">
+              Manage Workspace
+            </a>
+          </div>
+
+          <!-- Footer Info -->
+          <div style="text-align: center; padding-top: 25px; border-top: 1px solid #e8e6d9;">
+            <p style="color: #3a3a3a; margin: 0 0 8px 0; font-size: 14px;">
+              This member can be re-invited if needed.
+            </p>
+            <p style="color: #6b7280; margin: 0; font-size: 12px; line-height: 1.5;">
+              You can manage your workspace members and settings from your TuduAI dashboard.
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f2f0e3; padding: 20px 30px; text-align: center; border-top: 1px solid #e8e6d9;">
+          <p style="color: #6b7280; margin: 0; font-size: 12px;">
+            This notification was sent from TuduAI. You received this because you own the workspace.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const text = `
+    ${memberName || memberEmail} has left your "${workspaceName}" workspace on TuduAI.
+
+    Workspace: ${workspaceName}
+    Member who left: ${memberEmail}
+
+    You can manage your workspace and invite new members from your TuduAI dashboard: https://tuduai.vercel.app/todo
+
+    This member can be re-invited if needed.
+  `;
+
+  return sendZohoMail({ to: ownerEmail, subject, html, text });
+}
+
+/**
  * Send reminder email
  */
-export async function sendReminderEmail({ 
-  userEmail, 
-  reminderTitle, 
-  reminderBody, 
+export async function sendReminderEmail({
+  userEmail,
+  reminderTitle,
+  reminderBody,
   dueDate,
   userName = 'there'
 }) {

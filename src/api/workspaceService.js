@@ -388,18 +388,18 @@ export const workspaceService = {
         workspacesCollectionId,
         workspaceId
       );
-      
+
       // Only the workspace owner can remove members
       if (workspace.userId !== currentUserId) {
         throw new Error('Only the workspace owner can remove members');
       }
-      
+
       // Get the current members array
       const members = workspace.members || [];
-      
+
       // Remove the member
       const updatedMembers = members.filter(email => email !== memberEmail);
-      
+
       // Update the workspace
       const result = await databases.updateDocument(
         databaseId,
@@ -407,13 +407,77 @@ export const workspaceService = {
         workspaceId,
         { members: updatedMembers }
       );
-      
+
       // Clear cache when removing a member
       this.clearWorkspaceCache();
-      
+
       return result;
     } catch (error) {
       console.error('Error removing member from workspace:', error);
+      throw error;
+    }
+  },
+
+  // Allow a user to leave a workspace they are a member of
+  async leaveWorkspace(workspaceId, userEmail) {
+    try {
+      // Get the workspace
+      const workspace = await databases.getDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId
+      );
+
+      // Get the current members array
+      const members = workspace.members || [];
+
+      // Check if the user is actually a member
+      if (!members.includes(userEmail)) {
+        throw new Error('You are not a member of this workspace');
+      }
+
+      // Check if the user is the owner (owners cannot leave their own workspace)
+      const user = await account.get();
+      if (workspace.userId === user.$id) {
+        throw new Error('Workspace owners cannot leave their own workspace');
+      }
+
+      // Remove the user from members
+      const updatedMembers = members.filter(email => email !== userEmail);
+
+      // Update the workspace
+      const result = await databases.updateDocument(
+        databaseId,
+        workspacesCollectionId,
+        workspaceId,
+        { members: updatedMembers }
+      );
+
+      // Clear cache
+      this.clearWorkspaceCache();
+
+      // Return workspace data for email notification
+      // Get owner email with fallback for older workspaces
+      let ownerEmail = workspace.ownerEmail;
+      if (!ownerEmail) {
+        // For older workspaces without ownerEmail, we can't get the owner's email
+        // since account.get() only works for the current user
+        console.warn('Workspace missing ownerEmail field, cannot send notification');
+        ownerEmail = null; // Will skip email notification
+      }
+
+      return {
+        ...result,
+        workspaceData: {
+          name: workspace.name,
+          icon: workspace.icon,
+          ownerEmail: ownerEmail,
+          memberEmail: userEmail,
+          memberName: user.name || null
+        }
+      };
+    } catch (error) {
+      console.error('Error leaving workspace:', error);
       throw error;
     }
   },
@@ -455,15 +519,10 @@ export const workspaceService = {
       // Use the stored ownerEmail if available, otherwise get it
       let ownerEmail = workspace.ownerEmail;
       
-      // If ownerEmail is not available in the document, fetch it
+      // If ownerEmail is not available in the document, use fallback
       if (!ownerEmail) {
-        try {
-          const ownerUser = await account.get(workspace.userId);
-          ownerEmail = ownerUser.email;
-        } catch (error) {
-          console.error('Error fetching workspace owner email:', error);
-          ownerEmail = workspace.userId; // Fallback to userId if email fetch fails
-        }
+        console.warn('Workspace missing ownerEmail field');
+        ownerEmail = workspace.userId; // Fallback to userId if email is not available
       }
       
       return {

@@ -12,6 +12,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import Todo from './pages/Todo'
+import WeeklyInsights from './pages/WeeklyInsights'
 import WorkspaceSettings from './pages/WorkspaceSettings'
 import { AuthProvider } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -69,21 +70,29 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route 
-                      path="/todo" 
+                    <Route
+                      path="/todo"
                       element={
                         <ProtectedRoute>
                           <Todo showCompletedTasks={showCompletedTasks} />
                         </ProtectedRoute>
-                      } 
+                      }
                     />
-                    <Route 
-                      path="/workspace/:workspaceId/settings" 
+                    <Route
+                      path="/insights"
+                      element={
+                        <ProtectedRoute>
+                          <WeeklyInsights />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/workspace/:workspaceId/settings"
                       element={
                         <ProtectedRoute>
                           <WorkspaceSettings />
                         </ProtectedRoute>
-                      } 
+                      }
                     />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
