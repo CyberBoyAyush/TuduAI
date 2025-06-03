@@ -628,13 +628,16 @@ export default function WorkspaceSettings() {
             </div>
 
             {owner && (
-              <div className="flex items-center mt-4 p-3 bg-[#f2f0e3] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
-                <UserCircleIcon className="w-5 h-5 mr-2 text-[#3a3a3a] dark:text-[#d1cfbf]" />
-                <div>
+              <div className="flex items-center mt-4 p-3 bg-[#f2f0e3] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] overflow-hidden">
+                <UserCircleIcon className="w-5 h-5 mr-2 text-[#3a3a3a] dark:text-[#d1cfbf] flex-shrink-0" />
+                <div className="min-w-0 w-full">
                   <span className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf]">
                     Workspace owner:
                   </span>
-                  <p className="text-[#202020] dark:text-[#f2f0e3] font-medium">
+                  <p
+                    className="text-[#202020] dark:text-[#f2f0e3] font-medium truncate"
+                    title={owner}
+                  >
                     {owner}
                   </p>
                 </div>
@@ -646,7 +649,7 @@ export default function WorkspaceSettings() {
               <motion.button
                 onClick={handleLeaveWorkspace}
                 disabled={isLeaving}
-                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md transition-colors font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full px-2 md:px-4 py-1.5 md:py-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md transition-colors font-medium flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                 whileHover={{ scale: isLeaving ? 1 : 1.02 }}
                 whileTap={{ scale: isLeaving ? 1 : 0.98 }}
               >
