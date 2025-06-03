@@ -48,51 +48,41 @@ export function WorkspaceProvider({ children }) {
       }
 
       try {
-        // Prepare to store all workspace data before updating state
-        let allWorkspaces = [];
-        let defaultWorkspaceId = null;
-        
-        // Only perform cleanup once per session for this user
-        if (!hasCleanedUp.current) {
-          await workspaceService.cleanupDefaultWorkspaces(currentUser.$id);
-          hasCleanedUp.current = true;
-        }
-        
-        // Fetch all workspaces in one go
+        // Fetch all workspaces first
         const fetchedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
         
         if (!isMounted) return;
         
-        if (fetchedWorkspaces && fetchedWorkspaces.length > 0) {
+        // Separate owned workspaces from shared workspaces
+        const ownedWorkspaces = fetchedWorkspaces.filter(w => w.userId === currentUser.$id);
+        const sharedWorkspaces = fetchedWorkspaces.filter(w => w.userId !== currentUser.$id);
+        
+        // Check if user has their own default workspace
+        const ownedDefaultWorkspace = ownedWorkspaces.find(w => w.isDefault === true);
+        
+        let allWorkspaces = [];
+        let defaultWorkspaceId = null;
+        
+        if (ownedDefaultWorkspace) {
+          // User has their own default workspace
+          allWorkspaces = fetchedWorkspaces; // Include both owned and shared
+          defaultWorkspaceId = ownedDefaultWorkspace.$id;
+        } else if (ownedWorkspaces.length > 0) {
+          // User has workspaces but no default - make the first owned workspace default
           allWorkspaces = fetchedWorkspaces;
-          
-          // Find the default workspace
-          const defaultWorkspace = fetchedWorkspaces.find(w => w.isDefault === true);
-          
-          if (defaultWorkspace) {
-            defaultWorkspaceId = defaultWorkspace.$id;
-          } else {
-            // If no default workspace, use the first one
-            defaultWorkspaceId = fetchedWorkspaces[0].$id;
-          }
+          defaultWorkspaceId = ownedWorkspaces[0].$id;
         } else {
-          // If no workspaces, create a default one
+          // User has no owned workspaces - create a default workspace
           const defaultWorkspace = await workspaceService.createDefaultWorkspace(currentUser.$id);
-          
-          if (!isMounted) return;
-          
-          allWorkspaces = [defaultWorkspace];
+          allWorkspaces = [...fetchedWorkspaces, defaultWorkspace]; // Add to existing shared workspaces
           defaultWorkspaceId = defaultWorkspace.$id;
         }
         
-        // Only update state once with all the data
-        if (isMounted) {
-          // Batch state updates to reduce renders
-          setWorkspaces(allWorkspaces);
-          setActiveWorkspaceId(defaultWorkspaceId);
-          initialLoadComplete.current = true;
-          setLoading(false);
-        }
+        setWorkspaces(allWorkspaces);
+        setActiveWorkspaceId(defaultWorkspaceId);
+        
+        initialLoadComplete.current = true;
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching workspaces:", error);
         if (isMounted) {
@@ -121,6 +111,13 @@ export function WorkspaceProvider({ children }) {
       
       // Fetch fresh workspace data
       const fetchedWorkspaces = await workspaceService.getWorkspaces(currentUser.$id);
+      
+      // Separate owned workspaces from shared workspaces (same logic as main fetch)
+      const ownedWorkspaces = fetchedWorkspaces.filter(w => w.userId === currentUser.$id);
+      
+      // Check if user has their own default workspace
+      const ownedDefaultWorkspace = ownedWorkspaces.find(w => w.isDefault === true);
+      
       setWorkspaces(fetchedWorkspaces);
       
       // Ensure active workspace is still valid
@@ -129,9 +126,14 @@ export function WorkspaceProvider({ children }) {
       );
       
       if (!workspaceExists && fetchedWorkspaces.length > 0) {
-        // Find default workspace or use first one
-        const defaultWorkspace = fetchedWorkspaces.find(w => w.isDefault === true);
-        setActiveWorkspaceId(defaultWorkspace ? defaultWorkspace.$id : fetchedWorkspaces[0].$id);
+        // Find user's own default workspace first, then any default, then first workspace
+        if (ownedDefaultWorkspace) {
+          setActiveWorkspaceId(ownedDefaultWorkspace.$id);
+        } else if (ownedWorkspaces.length > 0) {
+          setActiveWorkspaceId(ownedWorkspaces[0].$id);
+        } else {
+          setActiveWorkspaceId(fetchedWorkspaces[0].$id);
+        }
       }
     } catch (error) {
       console.error("Error refreshing workspaces:", error);
