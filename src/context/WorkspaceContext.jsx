@@ -336,11 +336,62 @@ export function WorkspaceProvider({ children }) {
     if (!currentUser) {
       throw new Error('You must be logged in to view members');
     }
-    
+
     try {
       return await workspaceService.getWorkspaceMembers(workspaceId, currentUser.$id);
     } catch (error) {
       console.error("Error getting workspace members:", error);
+      throw error;
+    }
+  };
+
+  // Leave a workspace (for members, not owners)
+  const leaveWorkspace = async (workspaceId) => {
+    if (!currentUser) {
+      throw new Error('You must be logged in to leave a workspace');
+    }
+
+    try {
+      const result = await workspaceService.leaveWorkspace(workspaceId, currentUser.email);
+
+      // Send email notification to workspace owner if we have the data
+      if (result.workspaceData && result.workspaceData.ownerEmail) {
+        try {
+          const { sendWorkspaceLeaveNotification } = await import('../lib/zohoMailer');
+          await sendWorkspaceLeaveNotification({
+            ownerEmail: result.workspaceData.ownerEmail,
+            workspaceName: result.workspaceData.name,
+            memberEmail: result.workspaceData.memberEmail,
+            memberName: result.workspaceData.memberName,
+            workspaceIcon: result.workspaceData.icon
+          });
+          console.log('Leave notification email sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send leave notification email:', emailError);
+          // Don't throw error for email failure - the main action (leaving) was successful
+        }
+      }
+
+      // Refresh workspaces to ensure consistency
+      await refreshWorkspaces();
+
+      // If the user left the currently active workspace, switch to another one
+      if (activeWorkspaceId === workspaceId) {
+        const remainingWorkspaces = workspaces.filter(w =>
+          (w.$id !== workspaceId && w.id !== workspaceId) &&
+          (w.userId === currentUser.$id || w.members?.includes(currentUser.email))
+        );
+
+        if (remainingWorkspaces.length > 0) {
+          // Find default workspace or use first available
+          const defaultWorkspace = remainingWorkspaces.find(w => w.isDefault === true);
+          setActiveWorkspaceId(defaultWorkspace ? defaultWorkspace.$id : remainingWorkspaces[0].$id);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error leaving workspace:", error);
       throw error;
     }
   };
@@ -359,6 +410,7 @@ export function WorkspaceProvider({ children }) {
     addWorkspaceMember,
     removeWorkspaceMember,
     getWorkspaceMembers,
+    leaveWorkspace,
     loading
   };
 

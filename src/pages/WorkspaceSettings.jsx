@@ -18,13 +18,14 @@ export default function WorkspaceSettings() {
   const { workspaceId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { 
-    workspaces, 
-    updateWorkspace, 
+  const {
+    workspaces,
+    updateWorkspace,
     isWorkspaceOwner,
     addWorkspaceMember,
     removeWorkspaceMember,
-    getWorkspaceMembers
+    getWorkspaceMembers,
+    leaveWorkspace
   } = useWorkspace();
 
   const [workspace, setWorkspace] = useState(null);
@@ -148,13 +149,43 @@ export default function WorkspaceSettings() {
     try {
       await removeWorkspaceMember(workspaceId, memberEmail);
       setSuccess(`${memberEmail} removed from workspace`);
-      
+
       // Refresh members list
       const memberData = await getWorkspaceMembers(workspaceId);
       setMembers(memberData.members || []);
     } catch (error) {
       console.error('Error removing member:', error);
       setError(error.message || 'Failed to remove member');
+    }
+  };
+
+  // Handle leaving a workspace
+  const handleLeaveWorkspace = async () => {
+    setError('');
+    setSuccess('');
+
+    // Show confirmation dialog with email notification info
+    const confirmed = window.confirm(
+      'Are you sure you want to leave this workspace?\n\n' +
+      '• You will lose access to all tasks and data in this workspace\n' +
+      '• The workspace owner will be notified via email\n' +
+      '• You can be re-invited if needed\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await leaveWorkspace(workspaceId);
+      setSuccess('Successfully left the workspace. The owner has been notified via email.');
+
+      // Navigate back to todo page after a short delay
+      setTimeout(() => {
+        navigate('/todo');
+      }, 2000);
+    } catch (error) {
+      console.error('Error leaving workspace:', error);
+      setError(error.message || 'Failed to leave workspace');
     }
   };
 
@@ -406,6 +437,23 @@ export default function WorkspaceSettings() {
                 </div>
               </div>
             )}
+
+            {/* Leave Workspace Button */}
+            <div className="mt-6 pt-4 border-t border-[#d8d6cf] dark:border-[#3a3a3a]">
+              <motion.button
+                onClick={handleLeaveWorkspace}
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white rounded-md transition-colors font-medium flex items-center justify-center"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <XMarkIcon className="w-5 h-5 mr-2" />
+                Leave Workspace
+              </motion.button>
+              <p className="text-xs text-[#3a3a3a] dark:text-[#d1cfbf] mt-2 text-center">
+                You will lose access to all tasks and data in this workspace.<br/>
+                The workspace owner will be notified via email.
+              </p>
+            </div>
           </div>
         </motion.div>
       )}

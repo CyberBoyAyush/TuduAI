@@ -3,7 +3,7 @@
  * Purpose: Main dashboard with all task logic, UI, and columns
  */
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -11,7 +11,7 @@ import useTasks from '../hooks/useTasks'
 import TaskInput from '../components/TaskInput'
 import TaskList, { COLUMN_IDS } from '../components/TaskList'
 import TaskListByUrgency, { URGENCY_COLUMN_IDS } from '../components/TaskListByUrgency'
-import { PlusIcon, ArrowPathIcon, CalendarDaysIcon, FlagIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ArrowPathIcon, CalendarDaysIcon, FlagIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import {
   DndContext,
   DragOverlay,
@@ -508,16 +508,29 @@ export default function Todo({ showCompletedTasks }) {
           </div>
         </div>
 
-        <motion.button
-          onClick={refreshTasks}
-          disabled={refreshing}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center px-2 py-1.5 md:px-3 md:py-2 bg-primary-100 text-primary-700 rounded-md border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm"
-        >
-          <ArrowPathIcon className={`w-4 h-4 md:w-5 md:h-5 ${refreshing ? 'animate-spin' : ''} ${window.innerWidth < 640 ? '' : 'mr-2'}`} />
-          <span className="text-xs md:text-sm font-medium hidden sm:inline">Refresh Tasks</span>
-        </motion.button>
+        <div className="flex items-center space-x-2">
+          <Link to="/insights">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2 bg-primary-100 text-primary-700 rounded-lg border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm"
+            >
+              <ChartBarIcon className="w-5 h-5 sm:mr-2" />
+              <span className="text-sm font-medium hidden sm:inline">Insights</span>
+            </motion.button>
+          </Link>
+
+          <motion.button
+            onClick={refreshTasks}
+            disabled={refreshing}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2 bg-primary-100 text-primary-700 rounded-lg border border-primary-300 hover:bg-primary-200 transition-colors shadow-sm disabled:opacity-50"
+          >
+            <ArrowPathIcon className={`w-5 h-5 sm:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="text-sm font-medium hidden sm:inline">Refresh Tasks</span>
+          </motion.button>
+        </div>
       </div>
 
       {/* Task list with DnD context */}
