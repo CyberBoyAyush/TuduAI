@@ -379,7 +379,7 @@ export default function WorkspaceSettings() {
                   <input
                     id="icon"
                     type="text"
-                    className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-3 px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent transition-all placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
+                    className="shadow-sm border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md w-full py-3 px-2.5 md:px-4 text-[#202020] dark:text-[#f2f0e3] bg-[#f2f0e3] dark:bg-[#202020] focus:outline-none focus:ring-2 focus:ring-[#f76f52] focus:border-transparent transition-all placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60"
                     value={workspaceForm.icon}
                     onChange={(e) =>
                       setWorkspaceForm({
@@ -708,9 +708,6 @@ export default function WorkspaceSettings() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center mb-6">
-                <div className="mx-auto w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 border border-red-200 dark:border-red-800/60">
-                  <XMarkIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
-                </div>
                 <h3 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3] mb-2">
                   Leave Workspace
                 </h3>
