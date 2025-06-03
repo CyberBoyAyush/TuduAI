@@ -482,14 +482,14 @@ export default function TaskInput({ onAddTask }) {
               </div>
             </div>
             
-            <UrgencySelector 
+            <UrgencySelector
               onChange={(urgency) => {
                 const updatedTask = {
                   ...parsedTask,
                   urgency
                 };
-                
-                // Complete the task creation
+
+                // Complete the task creation only when user confirms
                 onAddTask(updatedTask);
                 resetForm();
               }}
