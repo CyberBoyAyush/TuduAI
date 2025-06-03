@@ -7,10 +7,10 @@ import { motion } from 'framer-motion'
 
 export default function UrgencySelector({ onChange, initialValue = 3 }) {
   const [urgency, setUrgency] = useState(initialValue)
-  
+
   const handleChange = (newValue) => {
     setUrgency(newValue)
-    onChange(newValue)
+    // Don't call onChange immediately - only when user confirms with button
   }
   
   // Urgency level descriptions
@@ -22,59 +22,74 @@ export default function UrgencySelector({ onChange, initialValue = 3 }) {
     5: 'Urgent'
   }
   
-  // Urgency level colors
+  // Urgency level colors matching the design system
   const colors = {
-    1: 'bg-primary-500/20',
-    2: 'bg-primary-500/40',
-    3: 'bg-primary-500/60',
-    4: 'bg-primary-500/80',
-    5: 'bg-primary-500',
+    1: 'bg-[#f76f52]/20',
+    2: 'bg-[#f76f52]/40',
+    3: 'bg-[#f76f52]/60',
+    4: 'bg-[#f76f52]/80',
+    5: 'bg-[#f76f52]',
   }
-  
+
   return (
-    <div className="space-y-6 py-4">
-      <div className="flex flex-col space-y-2">
+    <div className="space-y-4 py-2">
+      <div className="flex flex-col space-y-3">
         <div className="flex justify-between items-center">
-          <div className="text-sm text-primary-800">Urgency:</div>
-          <div className="text-lg font-bold text-primary-700">{urgency}.0</div>
+          <div className="text-sm text-[#202020] dark:text-[#f2f0e3] font-medium">Urgency Level:</div>
+          <div className="text-lg font-bold text-[#f76f52]">{urgency}.0</div>
         </div>
-        <div className="flex items-center">
-          <button 
+        <div className="flex items-center gap-3">
+          <motion.button
             onClick={() => urgency > 1 && handleChange(urgency - 1)}
-            className="w-8 h-8 flex items-center justify-center text-primary-800 hover:text-primary-700 disabled:opacity-30"
+            whileHover={{ scale: urgency > 1 ? 1.1 : 1 }}
+            whileTap={{ scale: urgency > 1 ? 0.9 : 1 }}
+            className="w-8 h-8 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] transition-colors"
             disabled={urgency === 1}
           >
-            &lt;
-          </button>
-          
+            <span className="text-lg font-bold">−</span>
+          </motion.button>
+
           <div className="flex-grow mx-2">
-            <div className="h-2 w-full bg-primary-100 rounded-full overflow-hidden">
+            <div className="h-3 w-full bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-full overflow-hidden border border-[#d8d6cf] dark:border-[#3a3a3a]">
               <motion.div
-                className={`h-full ${colors[urgency]}`}
+                className={`h-full ${colors[urgency]} rounded-full`}
                 initial={{ width: '60%' }}
                 animate={{ width: `${urgency * 20}%` }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
             </div>
+            <div className="flex justify-between text-xs text-[#3a3a3a] dark:text-[#d1cfbf] mt-1">
+              <span>Low</span>
+              <span>High</span>
+            </div>
           </div>
-          
-          <button 
+
+          <motion.button
             onClick={() => urgency < 5 && handleChange(urgency + 1)}
-            className="w-8 h-8 flex items-center justify-center text-primary-800 hover:text-primary-700 disabled:opacity-30"
+            whileHover={{ scale: urgency < 5 ? 1.1 : 1 }}
+            whileTap={{ scale: urgency < 5 ? 0.9 : 1 }}
+            className="w-8 h-8 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] transition-colors"
             disabled={urgency === 5}
           >
-            &gt;
-          </button>
+            <span className="text-lg font-bold">+</span>
+          </motion.button>
+        </div>
+
+        {/* Description */}
+        <div className="text-center">
+          <span className="text-sm text-[#3a3a3a] dark:text-[#d1cfbf] bg-[#e8e6d9] dark:bg-[#2a2a2a] px-3 py-1.5 rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]">
+            {descriptions[urgency]}
+          </span>
         </div>
       </div>
-      
+
       <motion.button
         onClick={() => onChange(urgency)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="w-full py-2 px-4 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-md text-center"
+        className="w-full py-2.5 px-4 bg-[#f76f52] hover:bg-[#e55e41] text-[#f2f0e3] font-medium rounded-md text-center transition-colors border border-transparent"
       >
-        Set Urgency (⌘ + ↵)
+        Set Urgency ({urgency}.0)
       </motion.button>
     </div>
   )
