@@ -25,7 +25,8 @@ import {
   ChevronDownIcon,
   BellAlertIcon,
   BuildingOfficeIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import { getUserReminders } from '../utils/reminders'
 
@@ -320,28 +321,6 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
               </motion.button>
             )}
             
-            {/* Insights button - only show when logged in */}
-            {currentUser && (
-              <Link to="/insights">
-                <motion.button
-                  className="p-1.5 sm:p-2 rounded-md text-[#3a3a3a] dark:text-[#d1cfbf] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-all relative group"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label="Weekly Insights"
-                >
-                  <motion.div
-                    className="absolute inset-0 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md opacity-0 group-hover:opacity-100 -z-10"
-                    transition={{ duration: 0.2 }}
-                  />
-                  <ChartBarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="sr-only">Insights</span>
-                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] font-medium text-[#3a3a3a] dark:text-[#d1cfbf] whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-bottom-4 transition-all duration-200 hidden sm:block">
-                    Insights
-                  </span>
-                </motion.button>
-              </Link>
-            )}
-
             {/* Reminders button - only show when logged in */}
             {currentUser && (
               <motion.button
@@ -462,6 +441,25 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
                             </p>
                           </div>
                         </div>
+                      </div>
+                      
+                      <div className="py-1">
+                        <Link to="/insights" onClick={() => setIsProfileOpen(false)}>
+                          <button className="flex items-center w-full px-4 py-2.5 text-sm text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors">
+                            <ChartBarIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
+                            Weekly Insights
+                          </button>
+                        </Link>
+                        <button 
+                          onClick={() => {
+                            window.open('mailto:tuduai@ayush-sharma.in?subject=Report Bug/Feature in TuduAI', '_blank')
+                            setIsProfileOpen(false)
+                          }}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] transition-colors"
+                        >
+                          <ExclamationTriangleIcon className="w-4 h-4 mr-3 text-[#3a3a3a] dark:text-[#d1cfbf]" />
+                          Report Bug/Feature
+                        </button>
                       </div>
                       
                       <div className="border-t border-[#d8d6cf] dark:border-[#2a2a2a] py-1 bg-[#e8e6d9] dark:bg-[#2a2a2a]">
