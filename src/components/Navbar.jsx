@@ -123,8 +123,11 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
         // Find the workspace at the corresponding index (0-indexed)
         const targetIndex = keyNum - 1;
         
-        if (workspaces && workspaces.length > targetIndex) {
-          const targetWorkspace = workspaces[targetIndex];
+        // Filter to only owned workspaces for keyboard shortcuts
+        const ownedWorkspaces = workspaces.filter(w => w.userId === currentUser?.$id);
+        
+        if (ownedWorkspaces && ownedWorkspaces.length > targetIndex) {
+          const targetWorkspace = ownedWorkspaces[targetIndex];
           
           if (!targetWorkspace) {
             return;
@@ -140,7 +143,7 @@ export default function Navbar({ toggleTheme, theme, showCompletedTasks, toggleS
         }
       }
     }
-  }, [workspaces, activeWorkspaceId, switchWorkspace]);
+  }, [workspaces, activeWorkspaceId, switchWorkspace, currentUser]);
   
   // Set up keyboard shortcut listener
   useEffect(() => {

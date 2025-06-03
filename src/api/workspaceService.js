@@ -206,14 +206,17 @@ export const workspaceService = {
     }
   },
 
-  // Get SINGLE default workspace for a user
+  // Get SINGLE default workspace for a user (only owned by the user)
   async getDefaultWorkspace(userId) {
     try {
       const defaultWorkspaces = await this.getDefaultWorkspaces(userId);
       
-      if (defaultWorkspaces.length > 0) {
-        // Return the first default workspace
-        return defaultWorkspaces[0];
+      // Filter to only include workspaces owned by this user
+      const ownedDefaults = defaultWorkspaces.filter(workspace => workspace.userId === userId);
+      
+      if (ownedDefaults.length > 0) {
+        // Return the first owned default workspace
+        return ownedDefaults[0];
       }
       
       return null;
@@ -223,25 +226,28 @@ export const workspaceService = {
     }
   },
 
-  // Clean up duplicate default workspaces
+  // Clean up duplicate default workspaces (only for owned workspaces)
   async cleanupDefaultWorkspaces(userId) {
     try {
       const defaultWorkspaces = await this.getDefaultWorkspaces(userId);
       
-      // If no default workspaces or just one, no need to clean up
-      if (defaultWorkspaces.length <= 1) {
-        return defaultWorkspaces.length === 1 ? defaultWorkspaces[0] : null;
+      // Filter to only include workspaces owned by this user
+      const ownedDefaults = defaultWorkspaces.filter(workspace => workspace.userId === userId);
+      
+      // If no owned default workspaces or just one, no need to clean up
+      if (ownedDefaults.length <= 1) {
+        return ownedDefaults.length === 1 ? ownedDefaults[0] : null;
       }
       
-      // If we have more than one default workspace, keep only the first one
+      // If we have more than one owned default workspace, keep only the first one
       // Update all others to non-default in a single batch if possible
       const updatePromises = [];
-      for (let i = 1; i < defaultWorkspaces.length; i++) {
+      for (let i = 1; i < ownedDefaults.length; i++) {
         updatePromises.push(
           databases.updateDocument(
             databaseId,
             workspacesCollectionId,
-            defaultWorkspaces[i].$id,
+            ownedDefaults[i].$id,
             { isDefault: false }
           )
         );
@@ -251,7 +257,7 @@ export const workspaceService = {
       await Promise.all(updatePromises);
       
       // Return the one we kept as default
-      return defaultWorkspaces[0];
+      return ownedDefaults[0];
     } catch (error) {
       console.error('Error cleaning up default workspaces:', error);
       throw error;
@@ -261,23 +267,33 @@ export const workspaceService = {
   // Create a default workspace for new users
   async createDefaultWorkspace(userId) {
     try {
-      // First check if a default workspace already exists to avoid redundant cleanup
+      // First check if a default workspace already exists for this specific user
       const existingDefaults = await this.getDefaultWorkspaces(userId);
       
-      // If at least one default workspace exists, run cleanup and return the first one
-      if (existingDefaults.length > 0) {
+      // Filter to only include workspaces owned by this user (not shared)
+      const ownedDefaults = existingDefaults.filter(workspace => workspace.userId === userId);
+      
+      // If at least one owned default workspace exists, run cleanup and return the first one
+      if (ownedDefaults.length > 0) {
         // Only run cleanup if we have multiple default workspaces
-        if (existingDefaults.length > 1) {
+        if (ownedDefaults.length > 1) {
           await this.cleanupDefaultWorkspaces(userId);
+          // Re-fetch after cleanup
+          const cleanedDefaults = await this.getDefaultWorkspaces(userId);
+          const cleanedOwnedDefaults = cleanedDefaults.filter(workspace => workspace.userId === userId);
+          if (cleanedOwnedDefaults.length > 0) {
+            return cleanedOwnedDefaults[0];
+          }
+        } else {
+          return ownedDefaults[0];
         }
-        return existingDefaults[0];
       }
       
       // Get the user's email for the ownerEmail field
       const user = await account.get();
       const userEmail = user.email;
       
-      // Otherwise create a new default workspace
+      // Create a new default workspace since none exists for this user
       const docId = crypto.randomUUID();
       
       const defaultWorkspace = await databases.createDocument(
