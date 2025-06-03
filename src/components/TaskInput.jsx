@@ -22,47 +22,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { createPortal } from 'react-dom'
 
-// Helper function to format task data as XML tags
-const formatTaskAsXML = (taskData) => {
-  let output = '';
-  
-  // Add title tag if present
-  if (taskData.title) {
-    output += `<title>${taskData.title}</title>\n`;
-  }
-  
-  // Add date tag if present
-  if (taskData.dueDate) {
-    output += `<date>${taskData.dueDate}</date>\n`;
-  }
-  
-  // Add urgency tag if present
-  if (taskData.urgency !== null) {
-    output += `<urgency>${taskData.urgency.toFixed(1)}</urgency>\n`;
-  }
-  
-  // Add follow_up tag
-  output += `<follow_up>${taskData.followUp || 'Anything else to add?'}</follow_up>\n`;
-  
-  // Add still_needed tag if there are missing fields
-  if (taskData.stillNeeded && taskData.stillNeeded.length > 0) {
-    output += `<still_needed>${taskData.stillNeeded.join(', ')}</still_needed>\n`;
-  }
-  
-  // Add suggestions
-  if (taskData.suggestions && taskData.suggestions.length > 0) {
-    taskData.suggestions.forEach(suggestion => {
-      output += `<suggestion type="${suggestion.type}" value="${suggestion.value}">${suggestion.displayText}</suggestion>\n`;
-    });
-  }
-  
-  // Add todo_complete tag if all required fields are present
-  if (taskData.title && taskData.dueDate && taskData.urgency !== null) {
-    output += `<todo_complete>\n`;
-  }
-  
-  return output;
-};
+
 
 export default function TaskInput({ onAddTask }) {
   const [input, setInput] = useState('')
@@ -70,7 +30,6 @@ export default function TaskInput({ onAddTask }) {
   const [loading, setLoading] = useState(false)
   const [parsedTask, setParsedTask] = useState(null)
   const [error, setError] = useState(null)
-  const [urgency, setUrgency] = useState(3)
   const [showTips, setShowTips] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showPastDateDialog, setShowPastDateDialog] = useState(false)
@@ -229,24 +188,7 @@ export default function TaskInput({ onAddTask }) {
     }
   }
 
-  const handleAdjustToFuture = async () => {
-    const adjustedTask = {
-      ...pastDateTask,
-      dueDate: adjustToFuture(pastDateTask.dueDate)
-    };
-    
-    try {
-      setIsSaving(true);
-      await onAddTask(adjustedTask);
-      resetForm();
-    } catch (error) {
-      console.error('Error saving adjusted task:', error);
-      setError('Failed to save task. Please try again.');
-    } finally {
-      setIsSaving(false);
-      setShowPastDateDialog(false);
-    }
-  }
+
   
   // Preview the AI-parsed task data
   const parsePreview = async () => {
@@ -482,16 +424,10 @@ export default function TaskInput({ onAddTask }) {
               </div>
             </div>
             
-            <UrgencySelector 
+            <UrgencySelector
               onChange={(urgency) => {
-                const updatedTask = {
-                  ...parsedTask,
-                  urgency
-                };
-                
                 // Complete the task creation
-                onAddTask(updatedTask);
-                resetForm();
+                finalizeTask({ urgency });
               }}
               initialValue={3}
             />
