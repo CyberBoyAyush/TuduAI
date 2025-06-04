@@ -65,15 +65,30 @@ export const authService = {
         return cachedUser;
       }
       
-      // Get fresh user data
-      const user = await account.get();
+      // First check if we have a valid session before trying to get user data
+      try {
+        // This will throw an error if there's no valid session
+        const session = await account.getSession('current');
+        
+        if (session) {
+          // Only try to get user if we have a valid session
+          const user = await account.get();
+          
+          // Update cache
+          cachedUser = user;
+          lastFetchTime = now;
+          
+          return user;
+        }
+      } catch (sessionError) {
+        // If there's no current session, return null without showing an error
+        cachedUser = null;
+        return null;
+      }
       
-      // Update cache
-      cachedUser = user;
-      lastFetchTime = now;
-      
-      return user;
+      return null;
     } catch (error) {
+      // This will only catch errors other than missing session
       console.error("Error getting current user:", error);
       cachedUser = null;
       return null;
@@ -83,8 +98,16 @@ export const authService = {
   // Check if user is logged in
   async isLoggedIn() {
     try {
-      const user = await this.getCurrentUser();
-      return !!user;
+      // Try to get the current session first
+      try {
+        const session = await account.getSession('current');
+        // If we get here, we have a valid session
+        const user = await this.getCurrentUser();
+        return !!user;
+      } catch (sessionError) {
+        // No valid session
+        return false;
+      }
     } catch (error) {
       return false;
     }
