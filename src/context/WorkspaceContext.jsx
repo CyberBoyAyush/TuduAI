@@ -19,7 +19,10 @@ const DEFAULT_WORKSPACES = [
 const MAX_WORKSPACES = 5;
 
 export function WorkspaceProvider({ children }) {
-  const { currentUser } = useAuth();
+  // Fix: Safely access currentUser by not destructuring directly
+  const auth = useAuth();
+  const currentUser = auth?.currentUser;
+  
   const [workspaces, setWorkspaces] = useState(DEFAULT_WORKSPACES);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState('default');
   const [loading, setLoading] = useState(true);
@@ -148,7 +151,7 @@ export function WorkspaceProvider({ children }) {
       throw new Error(`Maximum of ${MAX_WORKSPACES} workspaces allowed`);
     }
     
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to create a workspace');
     }
 
@@ -173,7 +176,7 @@ export function WorkspaceProvider({ children }) {
 
   // Update an existing workspace
   const updateWorkspace = async (id, updates) => {
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to update a workspace');
     }
     
@@ -265,7 +268,7 @@ export function WorkspaceProvider({ children }) {
   
   // For testing and cleanup - remove all workspaces
   const resetWorkspaces = async () => {
-    if (!currentUser) return;
+    if (!auth || !currentUser) return;
     
     try {
       setLoading(true);
@@ -285,7 +288,7 @@ export function WorkspaceProvider({ children }) {
 
   // Check if user is the owner of the workspace
   const isWorkspaceOwner = async (workspaceId) => {
-    if (!currentUser) return false;
+    if (!auth || !currentUser) return false;
     
     try {
       return await workspaceService.isWorkspaceOwner(workspaceId, currentUser.$id);
@@ -297,7 +300,7 @@ export function WorkspaceProvider({ children }) {
   
   // Add a member to a workspace
   const addWorkspaceMember = async (workspaceId, memberEmail) => {
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to add members');
     }
     
@@ -316,7 +319,7 @@ export function WorkspaceProvider({ children }) {
   
   // Remove a member from a workspace
   const removeWorkspaceMember = async (workspaceId, memberEmail) => {
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to remove members');
     }
     
@@ -335,7 +338,7 @@ export function WorkspaceProvider({ children }) {
   
   // Get all members of a workspace
   const getWorkspaceMembers = async (workspaceId) => {
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to view members');
     }
 
@@ -349,7 +352,7 @@ export function WorkspaceProvider({ children }) {
 
   // Leave a workspace (for members, not owners)
   const leaveWorkspace = async (workspaceId) => {
-    if (!currentUser) {
+    if (!auth || !currentUser) {
       throw new Error('You must be logged in to leave a workspace');
     }
 
