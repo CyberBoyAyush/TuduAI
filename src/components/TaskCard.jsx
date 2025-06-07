@@ -372,19 +372,33 @@ export default React.memo(function TaskCard({
                 <div className="flex items-center justify-between">
                   <h3 className={`font-medium text-primary-700 ${
                     task.completed ? 'line-through text-primary-800' : ''
-                  } relative`}>
+                  } relative overflow-hidden`}>
                     {task.title}
-                    
-                    {/* Line-through animation */}
+
+                    {/* Line-through animation overlay for multi-line support */}
                     <AnimatePresence>
                       {showCompletionAnimation && (
-                        <motion.div 
-                          className="absolute inset-0 w-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
+                        <motion.div
+                          className="absolute inset-0 pointer-events-none"
+                          initial={{ clipPath: 'inset(0 100% 0 0)' }}
+                          animate={{ clipPath: 'inset(0 0% 0 0)' }}
                           transition={{ duration: 0.4, delay: 0.3, ease: "easeInOut" }}
                         >
-                          <div className="h-0.5 w-full bg-[#f76f52] absolute top-1/2 -translate-y-1/2 rounded-full"></div>
+                          <div
+                            className="w-full h-full line-through text-[#f76f52] font-medium"
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              textDecorationColor: '#f76f52',
+                              textDecorationThickness: '2px',
+                              color: 'transparent'
+                            }}
+                          >
+                            {task.title}
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
