@@ -2,206 +2,250 @@
  * File: Login.jsx
  * Purpose: User login page
  */
-import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/AuthContext'
-import { 
-  AtSymbolIcon, 
-  LockClosedIcon, 
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast"; // Add this import
+import {
+  AtSymbolIcon,
+  LockClosedIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   ClipboardDocumentListIcon,
   CheckBadgeIcon,
   EyeIcon,
   EyeSlashIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline'
-import authService from '../api/authService'
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import authService from "../api/authService";
 
 // Portal-based Modal Component
 const ModalPortal = ({ children, isOpen, onClose }) => {
-  const modalRef = useRef(null)
-  
+  const modalRef = useRef(null);
+
   // Handle click outside the modal content
   const handleBackdropClick = (e) => {
     if (modalRef.current && !modalRef.current.contains(e.target)) {
-      onClose()
+      onClose();
     }
-  }
-  
+  };
+
   // Handle ESC key press
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
-    
+      if (e.key === "Escape") onClose();
+    };
+
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
+      document.addEventListener("keydown", handleEscape);
       // Prevent scrolling on body when modal is open
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden";
     }
-    
+
     return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'auto'
-    }
-  }, [isOpen, onClose])
-  
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "auto";
+    };
+  }, [isOpen, onClose]);
+
   // Focus trap
   useEffect(() => {
-    if (!isOpen) return
-    
-    const modal = modalRef.current
-    if (!modal) return
-    
+    if (!isOpen) return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
     // Find all focusable elements in the modal
-    const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
-    
+    const focusableElements = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
     // Set initial focus
-    firstElement?.focus()
-    
+    firstElement?.focus();
+
     // Handle tab navigation to keep focus inside modal
     const handleTabKey = (e) => {
-      if (e.key === 'Tab') {
+      if (e.key === "Tab") {
         if (e.shiftKey) {
           if (document.activeElement === firstElement) {
-            lastElement?.focus()
-            e.preventDefault()
+            lastElement?.focus();
+            e.preventDefault();
           }
         } else {
           if (document.activeElement === lastElement) {
-            firstElement?.focus()
-            e.preventDefault()
+            firstElement?.focus();
+            e.preventDefault();
           }
         }
       }
-    }
-    
-    document.addEventListener('keydown', handleTabKey)
-    return () => document.removeEventListener('keydown', handleTabKey)
-  }, [isOpen])
-  
-  if (!isOpen) return null
-  
+    };
+
+    document.addEventListener("keydown", handleTabKey);
+    return () => document.removeEventListener("keydown", handleTabKey);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
   return createPortal(
-    <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto" 
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto"
       onClick={handleBackdropClick}
       aria-modal="true"
       role="dialog"
       aria-labelledby="modal-title"
     >
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
-      <div 
-        ref={modalRef}
-        className="relative z-[101] w-full max-w-md mx-auto"
-      >
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        aria-hidden="true"
+      />
+      <div ref={modalRef} className="relative z-[101] w-full max-w-md mx-auto">
         {children}
       </div>
     </div>,
     document.body
-  )
-}
+  );
+};
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
   // Forgot password state
-  const [showForgotPassword, setShowForgotPassword] = useState(false)
-  const [recoveryEmail, setRecoveryEmail] = useState('')
-  const [recoveryEmailSent, setRecoveryEmailSent] = useState(false)
-  const [recoveryLoading, setRecoveryLoading] = useState(false)
-  const [recoveryError, setRecoveryError] = useState('')
-  
-  const { login, currentUser } = useAuth()
-  const navigate = useNavigate()
-  
-  // Redirect if already logged in
-  useEffect(() => {
-    if (currentUser) {
-      navigate('/todo')
-    }
-  }, [currentUser, navigate])
-  
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
+
+  const { login, currentUser } = useAuth();
+  const navigate = useNavigate();
+
+  // // Redirect if already logged in
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     navigate("/todo");
+  //   }
+  // }, [currentUser, navigate]);
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     // Validate form
     if (!email || !password) {
-      setError('Please fill in all fields')
-      return
+      setError("Please fill in all fields");
+      return;
     }
-    
+
     try {
-      setError('')
-      setLoading(true)
-      
-      const result = await login(email, password)
-      
-      if (!result.success) {
-        setError(result.message || 'Failed to log in')
+      setError("");
+      setLoading(true);
+
+      // Show loading toast that persists during login
+      const toastId = toast.loading("Signing in...", {
+        style: {
+          background: document.documentElement.classList.contains("dark")
+            ? "#202020"
+            : "#f2f0e3",
+          color: document.documentElement.classList.contains("dark")
+            ? "#f2f0e3"
+            : "#202020",
+          border: document.documentElement.classList.contains("dark")
+            ? "1px solid #3a3a3a"
+            : "1px solid #d8d6cf",
+        },
+        iconTheme: {
+          primary: "#f76f52",
+          secondary: document.documentElement.classList.contains("dark")
+            ? "#202020"
+            : "#f2f0e3",
+        },
+        duration: Infinity, // Make toast persist until explicitly dismissed
+      });
+
+      // Call the login function from AuthContext
+      const result = await login(email, password, toastId);
+
+      if (result.success) {
+        // Show success animation locally
+        setSuccess(true);
+
+        // Navigation happens in AuthContext.jsx
       } else {
-        // Show success animation before redirecting
-        setSuccess(true)
-        setTimeout(() => navigate('/todo'), 800)
+        // Dismiss the loading toast
+        toast.dismiss(toastId);
+        setError(result.message || "Failed to log in");
       }
     } catch (err) {
-      setError('Failed to log in. Please try again.')
-      console.error(err)
+      console.error("Login error:", err);
+      setError("Failed to log in. Please try again.");
+
+      // Show error toast
+      toast.error("Authentication failed", {
+        style: {
+          background: document.documentElement.classList.contains("dark")
+            ? "#202020"
+            : "#f2f0e3",
+          color: document.documentElement.classList.contains("dark")
+            ? "#f2f0e3"
+            : "#202020",
+          border: document.documentElement.classList.contains("dark")
+            ? "1px solid #3a3a3a"
+            : "1px solid #d8d6cf",
+        },
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleForgotPassword = async (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!recoveryEmail) {
-      setRecoveryError('Please enter your email address')
-      return
+      setRecoveryError("Please enter your email address");
+      return;
     }
-    
+
     try {
-      setRecoveryError('')
-      setRecoveryLoading(true)
-      
-      const result = await authService.forgotPassword(recoveryEmail)
-      
+      setRecoveryError("");
+      setRecoveryLoading(true);
+
+      const result = await authService.forgotPassword(recoveryEmail);
+
       if (result.success) {
-        setRecoveryEmailSent(true)
+        setRecoveryEmailSent(true);
       } else {
-        setRecoveryError(result.message)
+        setRecoveryError(result.message);
       }
     } catch (err) {
-      setRecoveryError('Failed to send recovery email. Please try again.')
-      console.error(err)
+      setRecoveryError("Failed to send recovery email. Please try again.");
+      console.error(err);
     } finally {
-      setRecoveryLoading(false)
+      setRecoveryLoading(false);
     }
-  }
-  
+  };
+
   // Reset modal state when closing
   const handleCloseModal = () => {
-    if (recoveryLoading) return
-    
+    if (recoveryLoading) return;
+
     // Only reset email and error if we haven't sent the recovery email yet
     if (!recoveryEmailSent) {
-      setRecoveryEmail('')
-      setRecoveryError('')
+      setRecoveryEmail("");
+      setRecoveryError("");
     }
-    
-    setShowForgotPassword(false)
-  }
-  
+
+    setShowForgotPassword(false);
+  };
+
   return (
     <div className="max-w-md mx-auto px-4 py-8 h-full flex items-center font-sans">
       <motion.div
@@ -210,60 +254,43 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        {success ? (
-          <motion.div 
-            className="text-center py-8"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <motion.div 
-              className="w-16 h-16 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md mx-auto flex items-center justify-center mb-4 border border-[#d8d6cf] dark:border-[#3a3a3a]"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+        <>
+          <div className="text-center mb-8">
+            <motion.div
+              className="w-16 h-16 mx-auto mb-4 bg-[#f76f52] rounded-md flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] relative"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <CheckCircleIcon className="w-10 h-10 text-[#f76f52]" />
-            </motion.div>
-            <h2 className="text-xl font-bold text-[#202020] dark:text-[#f2f0e3] mb-2">Login Successful</h2>
-            <p className="text-[#3a3a3a] dark:text-[#d1cfbf]">Redirecting to your tasks...</p>
-          </motion.div>
-        ) : (
-          <>
-            <div className="text-center mb-8">
-              <motion.div 
-                className="w-16 h-16 mx-auto mb-4 bg-[#f76f52] rounded-md flex items-center justify-center text-[#f2f0e3] dark:text-[#202020] relative"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              <span className="text-3xl font-bold">T</span>
+
+              <motion.div
+                className="absolute -top-2 -right-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
               >
-                <span className="text-3xl font-bold">T</span>
-                
-                <motion.div 
-                  className="absolute -top-2 -right-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
-                  initial={{ scale: 0, rotate: -20 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-                >
-                  <ClipboardDocumentListIcon className="w-4 h-4 text-[#f76f52]" />
-                </motion.div>
-                
-                <motion.div 
-                  className="absolute -bottom-2 -left-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
-                  initial={{ scale: 0, rotate: 20 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.7, duration: 0.5, type: "spring" }}
-                >
-                  <CheckBadgeIcon className="w-4 h-4 text-[#f76f52]" />
-                </motion.div>
+                <ClipboardDocumentListIcon className="w-4 h-4 text-[#f76f52]" />
               </motion.div>
-              <h2 className="text-2xl font-bold mb-1 text-[#202020] dark:text-[#f2f0e3]">
-                Welcome to TuduAI
-              </h2>
-              <p className="text-[#3a3a3a] dark:text-[#d1cfbf] text-sm">Sign in to manage your tasks</p>
-            </div>
-            
-            {error && (
-              <motion.div 
+
+              <motion.div
+                className="absolute -bottom-2 -left-2 bg-[#f2f0e3] dark:bg-[#202020] rounded-full p-1 border-2 border-[#f76f52] shadow-sm"
+                initial={{ scale: 0, rotate: 20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.7, duration: 0.5, type: "spring" }}
+              >
+                <CheckBadgeIcon className="w-4 h-4 text-[#f76f52]" />
+              </motion.div>
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-1 text-[#202020] dark:text-[#f2f0e3]">
+              Welcome to TuduAI
+            </h2>
+            <p className="text-[#3a3a3a] dark:text-[#d1cfbf] text-sm">
+              Sign in to manage your tasks
+            </p>
+          </div>
+
+          {/* {error && (
+              <motion.div
                 className="mb-6 p-3 bg-[#f2f0e3] dark:bg-[#202020] text-red-500 rounded-md shadow-sm border border-red-500"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -271,106 +298,100 @@ export default function Login() {
               >
                 {error}
               </motion.div>
-            )}
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3] mb-1">
-                  Email
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <AtSymbolIcon className="h-5 w-5 text-[#3a3a3a] dark:text-[#d1cfbf]" />
-                  </div>
-                  <motion.input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full py-3 pl-10 pr-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent shadow-sm"
-                    placeholder="you@example.com"
-                    required
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
-                  />
+            )} */}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3] mb-1">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <AtSymbolIcon className="h-5 w-5 text-[#3a3a3a] dark:text-[#d1cfbf]" />
                 </div>
+                <motion.input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full py-3 pl-10 pr-3 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent shadow-sm"
+                  placeholder="you@example.com"
+                  required
+                  whileFocus={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                />
               </div>
-              
-              <div>
-                <div className="flex justify-between mb-1">
-                  <label className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3]">
-                    Password
-                  </label>
-                  <button 
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="text-xs text-[#f76f52] hover:underline"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-[#3a3a3a] dark:text-[#d1cfbf]" />
-                  </div>
-                  <motion.input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full py-3 pl-10 pr-12 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent shadow-sm"
-                    placeholder="••••••••"
-                    required
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#3a3a3a] dark:text-[#d1cfbf] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <motion.button
-                  type="submit"
-                  className="w-full py-3 px-4 bg-[#f76f52] text-[#f2f0e3] font-medium rounded-md focus:outline-none focus:ring-1 focus:ring-[#f76f52] border border-transparent disabled:opacity-50 shadow-sm hover:bg-[#e55e41] transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#f2f0e3] inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : (
-                    <ArrowRightIcon className="w-5 h-5 mr-2 inline-block" />
-                  )}
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </motion.button>
-              </div>
-            </form>
-            
-            <div className="mt-6 text-center text-sm">
-              <span className="text-[#3a3a3a] dark:text-[#d1cfbf]">Don't have an account? </span>
-              <Link to="/register" className="text-[#f76f52] hover:underline font-medium">
-                Create one now
-              </Link>
             </div>
-          </>
-        )}
+
+            <div>
+              <div className="flex justify-between mb-1">
+                <label className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3]">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-xs text-[#f76f52] hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LockClosedIcon className="h-5 w-5 text-[#3a3a3a] dark:text-[#d1cfbf]" />
+                </div>
+                <motion.input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full py-3 pl-10 pr-12 border border-[#d8d6cf] dark:border-[#3a3a3a] rounded-md bg-[#f2f0e3] dark:bg-[#202020] text-[#202020] dark:text-[#f2f0e3] placeholder-[#3a3a3a]/60 dark:placeholder-[#d1cfbf]/60 focus:outline-none focus:ring-1 focus:ring-[#f76f52] focus:border-transparent shadow-sm"
+                  placeholder="••••••••"
+                  required
+                  whileFocus={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#3a3a3a] dark:text-[#d1cfbf] hover:text-[#202020] dark:hover:text-[#f2f0e3] transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <motion.button
+                type="submit"
+                className="w-full py-3 px-4 bg-[#f76f52] text-[#f2f0e3] font-medium rounded-md focus:outline-none focus:ring-1 focus:ring-[#f76f52] border border-transparent disabled:opacity-50 shadow-sm hover:bg-[#e55e41] transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={loading}
+              >
+                <ArrowRightIcon className="w-5 h-5 mr-2 inline-block" />
+                Sign In
+              </motion.button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-[#3a3a3a] dark:text-[#d1cfbf]">
+              Don't have an account?{" "}
+            </span>
+            <Link
+              to="/register"
+              className="text-[#f76f52] hover:underline font-medium"
+            >
+              Create one now
+            </Link>
+          </div>
+        </>
 
         {/* Forgot Password Modal using Portal */}
-        <ModalPortal 
-          isOpen={showForgotPassword} 
-          onClose={handleCloseModal}
-        >
+        <ModalPortal isOpen={showForgotPassword} onClose={handleCloseModal}>
           <motion.div
             className="bg-[#f2f0e3] dark:bg-[#202020] rounded-xl shadow-2xl p-6 m-4"
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -379,11 +400,11 @@ export default function Login() {
             transition={{
               type: "spring",
               stiffness: 300,
-              damping: 30
+              damping: 30,
             }}
           >
             <div className="flex justify-between items-center mb-5">
-              <h3 
+              <h3
                 id="modal-title"
                 className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3] flex items-center"
               >
@@ -402,7 +423,7 @@ export default function Login() {
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
-            
+
             {recoveryEmailSent ? (
               <motion.div
                 className="text-center py-8"
@@ -420,19 +441,19 @@ export default function Login() {
                   <motion.div
                     initial={{ rotate: 0 }}
                     animate={{ rotate: 10 }}
-                    transition={{ 
-                      delay: 0.5, 
+                    transition={{
+                      delay: 0.5,
                       duration: 0.5,
                       type: "tween", // Use tween instead of spring for multi-keyframe animation
                       repeat: 1,
-                      repeatType: "reverse"
+                      repeatType: "reverse",
                     }}
                   >
                     <CheckCircleIcon className="w-12 h-12 text-[#f76f52]" />
                   </motion.div>
                 </motion.div>
-                
-                <motion.h3 
+
+                <motion.h3
                   className="text-xl font-semibold text-[#202020] dark:text-[#f2f0e3] mb-3"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -440,13 +461,14 @@ export default function Login() {
                 >
                   Email Sent Successfully!
                 </motion.h3>
-                <motion.p 
+                <motion.p
                   className="text-[#3a3a3a] dark:text-[#d1cfbf] mb-6 max-w-sm mx-auto"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  Check your inbox for instructions on how to reset your password. The link will expire in 1 hour.
+                  Check your inbox for instructions on how to reset your
+                  password. The link will expire in 1 hour.
                 </motion.p>
                 <motion.button
                   type="button"
@@ -464,25 +486,35 @@ export default function Login() {
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <p className="text-[#3a3a3a] dark:text-[#d1cfbf] text-sm mb-4 border-l-2 border-[#f76f52] pl-3">
-                  Enter your email address and we'll send you instructions to reset your password.
+                  Enter your email address and we'll send you instructions to
+                  reset your password.
                 </p>
-                
+
                 {recoveryError && (
-                  <motion.div 
+                  <motion.div
                     className="p-3 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-md shadow-sm border border-red-200 dark:border-red-800/50 text-sm flex items-start gap-2"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                   >
                     <span className="mt-0.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </span>
                     {recoveryError}
                   </motion.div>
                 )}
-                
+
                 <div>
                   <label className="block text-sm font-medium text-[#202020] dark:text-[#f2f0e3] mb-1.5">
                     Email Address
@@ -506,7 +538,7 @@ export default function Login() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex gap-3 pt-3">
                   <motion.button
                     type="button"
@@ -526,12 +558,28 @@ export default function Login() {
                     whileTap={{ scale: 0.98 }}
                   >
                     {recoveryLoading ? (
-                      <svg className="animate-spin h-5 w-5 text-[#f2f0e3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin h-5 w-5 text-[#f2f0e3]"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                     ) : (
-                      'Send Instructions'
+                      "Send Instructions"
                     )}
                   </motion.button>
                 </div>
@@ -541,5 +589,5 @@ export default function Login() {
         </ModalPortal>
       </motion.div>
     </div>
-  )
+  );
 }
