@@ -2,67 +2,80 @@
  * File: App.jsx
  * Purpose: Root layout with Navbar and <Routes />
  */
-import { useState, useEffect } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
-import Navbar from './components/Navbar'
-import ReminderService from './components/ReminderService'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ResetPassword from './pages/ResetPassword'
-import Todo from './pages/Todo'
-import WeeklyInsights from './pages/WeeklyInsights'
-import WorkspaceSettings from './pages/WorkspaceSettings'
-import { AuthProvider } from './context/AuthContext'
-import { WorkspaceProvider } from './context/WorkspaceContext'
-import { TaskProvider } from './context/TaskContext'
-import { ReminderProvider } from './context/ReminderContext'
-import ProtectedRoute from './components/ProtectedRoute'
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import Navbar from "./components/Navbar";
+import ReminderService from "./components/ReminderService";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
+import Todo from "./pages/Todo";
+import WeeklyInsights from "./pages/WeeklyInsights";
+import WorkspaceSettings from "./pages/WorkspaceSettings";
+import { AuthProvider } from "./context/AuthContext";
+import { WorkspaceProvider } from "./context/WorkspaceContext";
+import { TaskProvider } from "./context/TaskContext";
+import { ReminderProvider } from "./context/ReminderContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "react-hot-toast";
 
 function App() {
-  const location = useLocation()
+  const location = useLocation();
   const [theme, setTheme] = useState(() => {
     // Check if theme is stored in localStorage
-    const savedTheme = localStorage.getItem('theme')
+    const savedTheme = localStorage.getItem("theme");
     // Check if OS prefers dark mode
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    
-    return savedTheme || (prefersDark ? 'dark' : 'light')
-  })
-  const [showCompletedTasks, setShowCompletedTasks] = useState(false)
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+
+    return savedTheme || (prefersDark ? "dark" : "light");
+  });
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
 
   // Apply the theme when it changes
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.remove("dark");
     }
-    localStorage.setItem('theme', theme)
-  }, [theme])
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
-  }
-  
+    setTheme((prevTheme) => (prevTheme === "dark" ? "light" : "dark"));
+  };
+
   const toggleShowCompletedTasks = () => {
-    setShowCompletedTasks(prevState => !prevState)
-  }
+    setShowCompletedTasks((prevState) => !prevState);
+  };
 
   return (
     <AuthProvider>
+      {/* Show app content */}
       <WorkspaceProvider>
         <TaskProvider>
           <ReminderProvider>
             <div className="min-h-screen flex flex-col">
-              <Navbar 
-                toggleTheme={toggleTheme} 
-                theme={theme} 
-                showCompletedTasks={showCompletedTasks} 
-                toggleShowCompletedTasks={toggleShowCompletedTasks} 
+              <Navbar
+                toggleTheme={toggleTheme}
+                theme={theme}
+                showCompletedTasks={showCompletedTasks}
+                toggleShowCompletedTasks={toggleShowCompletedTasks}
               />
               <ReminderService />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  // Ensure toasts are visible during transitions
+                  style: {
+                    zIndex: 9999,
+                  },
+                }}
+              />
               <main className="flex-grow container mx-auto px-4 py-8">
                 <AnimatePresence mode="wait">
                   <Routes location={location} key={location.pathname}>
@@ -103,7 +116,7 @@ function App() {
         </TaskProvider>
       </WorkspaceProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;
