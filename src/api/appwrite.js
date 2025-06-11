@@ -1,4 +1,4 @@
-import { Client, Account, Databases, ID, Query } from 'appwrite';
+import { Client, Account, Databases, ID, Query, OAuthProvider } from 'appwrite';
 
 // Initialize the Appwrite client
 const client = new Client()
@@ -17,5 +17,5 @@ const tasksCollectionId = import.meta.env.VITE_APPWRITE_TASKS_COLLECTION_ID || '
 const remindersCollectionId = import.meta.env.VITE_APPWRITE_REMINDERS_COLLECTION_ID || 'reminders';
 
 // Export initialized services and constants
-export { client, account, databases, ID, Query };
+export { client, account, databases, ID, Query, OAuthProvider };
 export { databaseId, workspacesCollectionId, tasksCollectionId, remindersCollectionId }; 

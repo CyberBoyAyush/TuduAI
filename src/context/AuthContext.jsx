@@ -85,7 +85,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true); // Add this to differentiate initial load from operations
   const authCheckCompleted = useRef(false);
+  const oauthCallbackProcessed = useRef(false);
+  const lastToastTime = useRef(0);
   const navigate = useNavigate();
+
+  // Clear any existing toasts when auth state changes
+  useEffect(() => {
+    if (currentUser) {
+      // Clear any auth-related error toasts when user logs in successfully
+      toast.dismiss();
+    }
+  }, [currentUser]);
 
   // Initialize auth state from Appwrite once
   useEffect(() => {
@@ -282,11 +292,103 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google OAuth login function
+  const loginWithGoogle = async () => {
+    try {
+      setLoading(true);
+      await authService.loginWithGoogle();
+      // The user will be redirected to Google, so we don't need to do anything else here
+      // The actual login completion will happen in the callback handler
+    } catch (error) {
+      console.error("Google OAuth error:", error);
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  // Handle OAuth callback after redirect
+  const handleOAuthCallback = async () => {
+    // Prevent multiple processing
+    if (oauthCallbackProcessed.current) {
+      console.log("OAuth callback already processed, skipping...");
+      return { success: true };
+    }
+
+    try {
+      setLoading(true);
+      oauthCallbackProcessed.current = true;
+      
+      const user = await authService.handleOAuthCallback();
+      setCurrentUser(user);
+
+      // Show success toast only once with a unique ID to prevent duplicates
+      const userName = user.name || user.email?.split("@")[0] || "User";
+      const toastId = `oauth-success-${user.$id || Date.now()}`;
+      const now = Date.now();
+      
+      // Prevent rapid-fire duplicate toasts (within 3 seconds)
+      if (now - lastToastTime.current < 3000) {
+        console.log("Preventing duplicate OAuth success toast");
+        return { success: true };
+      }
+      
+      lastToastTime.current = now;
+      
+      // Dismiss any existing toasts first
+      toast.dismiss();
+      
+      // Show success toast after a small delay to ensure no race conditions
+      setTimeout(() => {
+        if (isDarkMode()) {
+          toast.success(`Welcome, ${userName}!`, {
+            ...toastStyles.darkSuccess,
+            id: toastId,
+          });
+        } else {
+          toast.success(`Welcome, ${userName}!`, {
+            ...toastStyles.success,
+            id: toastId,
+          });
+        }
+      }, 100);
+
+      // Reset the flag after 5 seconds to allow future OAuth attempts
+      setTimeout(() => {
+        oauthCallbackProcessed.current = false;
+      }, 5000);
+
+      return { success: true };
+    } catch (error) {
+      console.error("OAuth callback error:", error);
+      oauthCallbackProcessed.current = false; // Reset on error so user can retry
+      
+      let errorMessage = "Authentication failed after redirect";
+      if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Dismiss any existing toasts first
+      toast.dismiss();
+
+      if (isDarkMode()) {
+        toast.error(errorMessage, toastStyles.darkError);
+      } else {
+        toast.error(errorMessage, toastStyles.error);
+      }
+
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     loading,
     initializing, // Expose this state to consumers
     login,
+    loginWithGoogle,
+    handleOAuthCallback,
     register,
     logout,
   };
