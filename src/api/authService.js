@@ -1,4 +1,4 @@
-import { account, ID } from './appwrite';
+import { account, ID, OAuthProvider } from './appwrite';
 
 // Add a cache for the current user to prevent multiple API calls
 let cachedUser = null;
@@ -154,6 +154,40 @@ export const authService = {
         success: false, 
         message: error.message || 'Failed to reset password. Please try again.' 
       };
+    }
+  },
+
+  // Create OAuth2 session with Google
+  async loginWithGoogle() {
+    try {
+      // Create OAuth2 session with Google
+      // This will redirect the user to Google's OAuth page
+      await account.createOAuth2Session(
+        OAuthProvider.Google,
+        `${window.location.origin}/auth/callback`, // Success redirect URL
+        `${window.location.origin}/login`, // Failure redirect URL
+        ['openid', 'email', 'profile'] // Scopes
+      );
+    } catch (error) {
+      console.error("Google OAuth error:", error);
+      throw error;
+    }
+  },
+
+  // Handle OAuth callback (extract user info after redirect)
+  async handleOAuthCallback() {
+    try {
+      // After OAuth redirect, get the current user
+      const user = await account.get();
+      
+      // Update cache
+      cachedUser = user;
+      lastFetchTime = Date.now();
+      
+      return user;
+    } catch (error) {
+      console.error("OAuth callback error:", error);
+      throw error;
     }
   },
 };

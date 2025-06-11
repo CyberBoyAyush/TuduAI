@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
+import AuthCallback from "./pages/AuthCallback";
 import Todo from "./pages/Todo";
 import WeeklyInsights from "./pages/WeeklyInsights";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
@@ -74,6 +75,20 @@ function App() {
                   style: {
                     zIndex: 9999,
                   },
+                  // Prevent duplicate toasts
+                  duration: 4000,
+                  // Remove toasts when navigating
+                  success: {
+                    duration: 4000,
+                  },
+                  error: {
+                    duration: 5000,
+                  },
+                }}
+                // Only show one toast at a time for the same type
+                containerStyle={{
+                  top: 20,
+                  right: 20,
                 }}
               />
               <main className="flex-grow container mx-auto px-4 py-8">
@@ -83,6 +98,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route
                       path="/todo"
                       element={
