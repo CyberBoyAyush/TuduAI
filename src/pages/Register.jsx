@@ -68,9 +68,16 @@ export default function Register() {
       if (!result.success) {
         setError(result.message || "Failed to create account");
       } else {
-        // Show success animation before redirecting
+        // Show success animation
         setSuccess(true);
-        setTimeout(() => navigate("/todo"), 800);
+
+        // If email verification is required, don't redirect to todo
+        // The ProtectedRoute will handle showing the verification UI
+        if (result.emailVerificationRequired) {
+          setTimeout(() => navigate("/todo"), 800); // This will show the verification UI
+        } else {
+          setTimeout(() => navigate("/todo"), 800);
+        }
       }
     } catch (err) {
       setError("Failed to create account. Please try again.");
@@ -123,7 +130,7 @@ export default function Register() {
               Registration Successful
             </h2>
             <p className="text-[#3a3a3a] dark:text-[#d1cfbf]">
-              Redirecting to your tasks...
+              Please check your email to verify your account...
             </p>
           </motion.div>
         ) : (

@@ -179,15 +179,88 @@ export const authService = {
     try {
       // After OAuth redirect, get the current user
       const user = await account.get();
-      
+
       // Update cache
       cachedUser = user;
       lastFetchTime = Date.now();
-      
+
       return user;
     } catch (error) {
       console.error("OAuth callback error:", error);
       throw error;
+    }
+  },
+
+  // Send email verification
+  async sendEmailVerification() {
+    try {
+      await account.createVerification(
+        `${window.location.origin}/verify-email` // URL the user will be redirected to after clicking the verification link
+      );
+
+      return {
+        success: true,
+        message: 'Verification email sent. Please check your inbox.'
+      };
+    } catch (error) {
+      console.error("Email verification error:", error);
+      return {
+        success: false,
+        message: error.message || 'Failed to send verification email. Please try again.'
+      };
+    }
+  },
+
+  // Verify email with userId and secret from URL
+  async verifyEmail(userId, secret) {
+    try {
+      await account.updateVerification(userId, secret);
+
+      // Clear cache to force refresh of user data
+      cachedUser = null;
+
+      return {
+        success: true,
+        message: 'Email verified successfully!'
+      };
+    } catch (error) {
+      console.error("Email verification confirmation error:", error);
+      return {
+        success: false,
+        message: error.message || 'Failed to verify email. The link may be expired or invalid.'
+      };
+    }
+  },
+
+  // Resend email verification
+  async resendEmailVerification() {
+    try {
+      // Same as sendEmailVerification but with different messaging
+      await account.createVerification(
+        `${window.location.origin}/verify-email`
+      );
+
+      return {
+        success: true,
+        message: 'Verification email resent. Please check your inbox.'
+      };
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      return {
+        success: false,
+        message: error.message || 'Failed to resend verification email. Please try again.'
+      };
+    }
+  },
+
+  // Check if current user's email is verified
+  async isEmailVerified() {
+    try {
+      const user = await this.getCurrentUser();
+      return user ? user.emailVerification : false;
+    } catch (error) {
+      console.error("Email verification check error:", error);
+      return false;
     }
   },
 };
