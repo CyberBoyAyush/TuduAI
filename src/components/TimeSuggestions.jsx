@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { parseTaskInput } from '../lib/openai'
 
-export default function TimeSuggestions({ onSelect }) {
+export default function TimeSuggestions({ onSelect, disabled = false }) {
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -159,10 +159,15 @@ export default function TimeSuggestions({ onSelect }) {
         {validSuggestions.slice(0, 6).map((suggestion, index) => (
           <motion.button
             key={index}
-            onClick={() => onSelect(suggestion.value)}
-            className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            onClick={() => !disabled && onSelect(suggestion.value)}
+            disabled={disabled}
+            className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+              disabled
+                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                : 'bg-primary-100 text-primary-700 border-primary-300 hover:bg-primary-200'
+            }`}
+            whileHover={disabled ? {} : { scale: 1.05 }}
+            whileTap={disabled ? {} : { scale: 0.95 }}
           >
             {suggestion.label}
           </motion.button>
@@ -172,30 +177,44 @@ export default function TimeSuggestions({ onSelect }) {
       <div className="flex flex-wrap gap-2">
         <motion.button
           onClick={() => {
-            // Set to a week from now at 9 AM
-            const nextWeek = new Date(today)
-            nextWeek.setDate(today.getDate() + 7)
-            nextWeek.setHours(9, 0, 0, 0)
-            onSelect(nextWeek.toISOString())
+            if (!disabled) {
+              // Set to a week from now at 9 AM
+              const nextWeek = new Date(today)
+              nextWeek.setDate(today.getDate() + 7)
+              nextWeek.setHours(9, 0, 0, 0)
+              onSelect(nextWeek.toISOString())
+            }
           }}
-          className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          disabled={disabled}
+          className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+            disabled
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-primary-100 text-primary-700 border-primary-300 hover:bg-primary-200'
+          }`}
+          whileHover={disabled ? {} : { scale: 1.05 }}
+          whileTap={disabled ? {} : { scale: 0.95 }}
         >
           Next week
         </motion.button>
         
         <motion.button
           onClick={() => {
-            // Set to two weeks from now at 9 AM
-            const twoWeeks = new Date(today)
-            twoWeeks.setDate(today.getDate() + 14)
-            twoWeeks.setHours(9, 0, 0, 0)
-            onSelect(twoWeeks.toISOString())
+            if (!disabled) {
+              // Set to two weeks from now at 9 AM
+              const twoWeeks = new Date(today)
+              twoWeeks.setDate(today.getDate() + 14)
+              twoWeeks.setHours(9, 0, 0, 0)
+              onSelect(twoWeeks.toISOString())
+            }
           }}
-          className="px-3 py-2 bg-primary-100 text-primary-700 rounded-md text-sm font-medium border border-primary-300 hover:bg-primary-200"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          disabled={disabled}
+          className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+            disabled
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-primary-100 text-primary-700 border-primary-300 hover:bg-primary-200'
+          }`}
+          whileHover={disabled ? {} : { scale: 1.05 }}
+          whileTap={disabled ? {} : { scale: 0.95 }}
         >
           Two weeks
         </motion.button>

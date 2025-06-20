@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 
-export default function UrgencySelector({ onChange, initialValue = 3 }) {
+export default function UrgencySelector({ onChange, initialValue = 3, disabled = false }) {
   const [urgency, setUrgency] = useState(initialValue)
 
   const handleChange = (newValue) => {
@@ -40,11 +40,11 @@ export default function UrgencySelector({ onChange, initialValue = 3 }) {
         </div>
         <div className="flex items-center gap-3">
           <motion.button
-            onClick={() => urgency > 1 && handleChange(urgency - 1)}
-            whileHover={{ scale: urgency > 1 ? 1.1 : 1 }}
-            whileTap={{ scale: urgency > 1 ? 0.9 : 1 }}
+            onClick={() => !disabled && urgency > 1 && handleChange(urgency - 1)}
+            whileHover={{ scale: !disabled && urgency > 1 ? 1.1 : 1 }}
+            whileTap={{ scale: !disabled && urgency > 1 ? 0.9 : 1 }}
             className="w-8 h-8 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] transition-colors"
-            disabled={urgency === 1}
+            disabled={disabled || urgency === 1}
           >
             <span className="text-lg font-bold">−</span>
           </motion.button>
@@ -65,11 +65,11 @@ export default function UrgencySelector({ onChange, initialValue = 3 }) {
           </div>
 
           <motion.button
-            onClick={() => urgency < 5 && handleChange(urgency + 1)}
-            whileHover={{ scale: urgency < 5 ? 1.1 : 1 }}
-            whileTap={{ scale: urgency < 5 ? 0.9 : 1 }}
+            onClick={() => !disabled && urgency < 5 && handleChange(urgency + 1)}
+            whileHover={{ scale: !disabled && urgency < 5 ? 1.1 : 1 }}
+            whileTap={{ scale: !disabled && urgency < 5 ? 0.9 : 1 }}
             className="w-8 h-8 flex items-center justify-center text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a] transition-colors"
-            disabled={urgency === 5}
+            disabled={disabled || urgency === 5}
           >
             <span className="text-lg font-bold">+</span>
           </motion.button>
@@ -84,12 +84,17 @@ export default function UrgencySelector({ onChange, initialValue = 3 }) {
       </div>
 
       <motion.button
-        onClick={() => onChange(urgency)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className="w-full py-2.5 px-4 bg-[#f76f52] hover:bg-[#e55e41] text-[#f2f0e3] font-medium rounded-md text-center transition-colors border border-transparent"
+        onClick={() => !disabled && onChange(urgency)}
+        whileHover={{ scale: !disabled ? 1.02 : 1 }}
+        whileTap={{ scale: !disabled ? 0.98 : 1 }}
+        disabled={disabled}
+        className={`w-full py-2.5 px-4 font-medium rounded-md text-center transition-colors border border-transparent ${
+          disabled
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : 'bg-[#f76f52] hover:bg-[#e55e41] text-[#f2f0e3]'
+        }`}
       >
-        Set Urgency ({urgency}.0)
+        {disabled ? 'Setting Urgency...' : `Set Urgency (${urgency}.0)`}
       </motion.button>
     </div>
   )

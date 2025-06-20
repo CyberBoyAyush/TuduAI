@@ -73,6 +73,9 @@ export default function TaskInput({ onAddTask }) {
   const [urgency, setUrgency] = useState(3)
   const [showTips, setShowTips] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSelectingDate, setIsSelectingDate] = useState(false)
+  const [showAISuggestions, setShowAISuggestions] = useState(false)
+  const [aiSuggestions, setAISuggestions] = useState([])
   const [showPastDateDialog, setShowPastDateDialog] = useState(false)
   const [pastDateTask, setPastDateTask] = useState(null)
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
@@ -112,6 +115,190 @@ export default function TaskInput({ onAddTask }) {
     
     return date.toISOString();
   }
+
+  // Function to generate comprehensive AI suggestions based on task content
+  const generateAISuggestions = (taskInput, parsedData = null) => {
+    const input = taskInput.toLowerCase();
+    const suggestions = [];
+
+    // Advanced context analysis
+    const words = input.split(' ');
+    const taskLength = words.length;
+    
+    // Time estimation suggestions - more intelligent
+    if (!input.includes('hour') && !input.includes('minute') && !input.includes('day') && !input.includes('min')) {
+      if (input.includes('call') || input.includes('meeting')) {
+        suggestions.push({
+          type: 'time',
+          title: 'Time estimation',
+          suggestion: 'Calls and meetings typically take 30-60 minutes. Adding duration helps with scheduling',
+          icon: '⏱️',
+          action: 'Add 30 min'
+        });
+      } else if (input.includes('email') || input.includes('message')) {
+        suggestions.push({
+          type: 'time',
+          title: 'Quick task timing',
+          suggestion: 'Email tasks usually take 10-15 minutes. Setting a timer can improve focus',
+          icon: '📧',
+          action: 'Add 15 min'
+        });
+      } else if (input.includes('workout') || input.includes('exercise') || input.includes('gym')) {
+        suggestions.push({
+          type: 'time',
+          title: 'Workout duration',
+          suggestion: 'Standard workouts are 45-90 minutes. Plan accordingly for optimal results',
+          icon: '💪',
+          action: 'Add 60 min'
+        });
+      } else {
+        suggestions.push({
+          type: 'time',
+          title: 'Time estimation',
+          suggestion: 'Adding a time estimate helps with better planning and prevents overcommitment',
+          icon: '⏱️',
+          action: 'Add duration'
+        });
+      }
+    }
+
+    // Smart urgency detection
+    const urgentKeywords = ['urgent', 'asap', 'deadline', 'important', 'critical', 'emergency', 'rush'];
+    const hasUrgentKeyword = urgentKeywords.some(keyword => input.includes(keyword));
+    
+    if (hasUrgentKeyword) {
+      suggestions.push({
+        type: 'urgency',
+        title: 'High priority detected',
+        suggestion: 'Urgent tasks should be tackled first. Consider setting urgency 4-5 and scheduling for today',
+        icon: '🚨',
+        action: 'Set urgent'
+      });
+    }
+
+    // Context-aware timing suggestions
+    if (input.includes('gym') || input.includes('workout') || input.includes('exercise') || input.includes('run')) {
+      suggestions.push({
+        type: 'timing',
+        title: 'Peak performance timing',
+        suggestion: 'Morning workouts (6-9 AM) boost energy for the day and have better adherence rates',
+        icon: '🌅',
+        action: 'Schedule 7 AM'
+      });
+    }
+
+    if (input.includes('study') || input.includes('learn') || input.includes('read') || input.includes('homework')) {
+      suggestions.push({
+        type: 'timing',
+        title: 'Cognitive peak hours',
+        suggestion: 'Brain function peaks 9 AM-12 PM. Schedule learning when your mind is sharpest',
+        icon: '🧠',
+        action: 'Schedule 10 AM'
+      });
+    }
+
+    if (input.includes('creative') || input.includes('write') || input.includes('design') || input.includes('brainstorm') || input.includes('art')) {
+      suggestions.push({
+        type: 'timing',
+        title: 'Creative flow state',
+        suggestion: 'Creative work flows best in morning quiet hours (8-11 AM) with minimal distractions',
+        icon: '🎨',
+        action: 'Schedule 9 AM'
+      });
+    }
+
+    // Social and communication optimization
+    if (input.includes('call') || input.includes('meeting') || input.includes('interview')) {
+      suggestions.push({
+        type: 'preparation',
+        title: 'Meeting preparation',
+        suggestion: 'Block 10-15 min before meetings for agenda review and mental preparation',
+        icon: '📋',
+        action: 'Add prep time'
+      });
+    }
+
+    // Task breakdown for complex activities
+    const complexKeywords = ['project', 'plan', 'organize', 'research', 'setup', 'install', 'learn'];
+    if (complexKeywords.some(keyword => input.includes(keyword)) || taskLength > 5) {
+      suggestions.push({
+        type: 'breakdown',
+        title: 'Complex task detected',
+        suggestion: 'Break large tasks into 25-30 min focused chunks for better completion rates',
+        icon: '🔧',
+        action: 'Break down'
+      });
+    }
+
+    // Health and wellness
+    if (input.includes('doctor') || input.includes('dentist') || input.includes('appointment') || input.includes('checkup')) {
+      suggestions.push({
+        type: 'health',
+        title: 'Health appointment',
+        suggestion: 'Set multiple reminders: 1 week, 24 hours, and 2 hours before to ensure attendance',
+        icon: '🏥',
+        action: 'Set reminders'
+      });
+    }
+
+    // Shopping and errands optimization
+    if (input.includes('grocery') || input.includes('shop') || input.includes('buy') || input.includes('store')) {
+      suggestions.push({
+        type: 'efficiency',
+        title: 'Shopping strategy',
+        suggestion: 'Shop 10 AM-12 PM on weekdays for less crowds, better selection, and faster checkout',
+        icon: '🛒',
+        action: 'Schedule 11 AM'
+      });
+    }
+
+    // Work and productivity
+    if (input.includes('work') || input.includes('task') || input.includes('job') || input.includes('email')) {
+      suggestions.push({
+        type: 'productivity',
+        title: 'Productivity boost',
+        suggestion: 'Use the 2-minute rule: if it takes less than 2 minutes, do it now',
+        icon: '⚡',
+        action: 'Quick task'
+      });
+    }
+
+    // Habit formation
+    if (input.includes('daily') || input.includes('every') || input.includes('habit') || input.includes('routine')) {
+      suggestions.push({
+        type: 'habit',
+        title: 'Habit stacking',
+        suggestion: 'Link new habits to existing ones. Same time, same place = better adherence',
+        icon: '🔄',
+        action: 'Make routine'
+      });
+    }
+
+    // Social tasks
+    if (input.includes('family') || input.includes('friend') || input.includes('social') || input.includes('visit')) {
+      suggestions.push({
+        type: 'social',
+        title: 'Social connection',
+        suggestion: 'Quality time is best in evenings when everyone is relaxed and available',
+        icon: '👥',
+        action: 'Schedule evening'
+      });
+    }
+
+    // Default context-aware suggestion
+    if (suggestions.length === 0) {
+      suggestions.push({
+        type: 'general',
+        title: 'Smart scheduling',
+        suggestion: 'Most people are most productive 9-11 AM. Schedule important tasks during peak hours',
+        icon: '📈',
+        action: 'Optimize timing'
+      });
+    }
+
+    // Ensure we don't have too many suggestions
+    return suggestions.slice(0, 3);
+  };
 
   const handleSubmit = async (e) => {
     e?.preventDefault()
@@ -165,6 +352,9 @@ export default function TaskInput({ onAddTask }) {
     setError(null)
     setIsExpanded(false)
     setIsSaving(false)
+    setIsSelectingDate(false)
+    setShowAISuggestions(false)
+    setAISuggestions([])
     setShowPastDateDialog(false)
   }
   
@@ -248,79 +438,24 @@ export default function TaskInput({ onAddTask }) {
     }
   }
   
-  // Preview the AI-parsed task data
+  // Show AI suggestions based on task input
   const parsePreview = async () => {
     if (!input.trim()) return
     
     setLoading(true)
     
     try {
-      const result = await parseTaskInput(input)
+      // Generate AI suggestions based on the input
+      const suggestions = generateAISuggestions(input);
+      setAISuggestions(suggestions);
+      setShowAISuggestions(true);
       
-      // Check if date is in the past
-      if (result.dueDate && isPastDate(result.dueDate)) {
-        setPastDateTask(result);
-        setShowPastDateDialog(true);
-        setLoading(false);
-        return;
-      }
+      // Only parse the task if needed for the suggestions, but don't set it as the main task
+      // This keeps the lightbulb focused on suggestions rather than task creation
       
-      // Ensure all dates are in the future
-      if (result.dueDate) {
-        const dueDate = new Date(result.dueDate);
-        const now = new Date();
-        
-        // If the parsed time is in the past but on the same day, assume it's for tomorrow
-        if (dueDate < now) {
-          // If it's the same day but earlier time
-          if (dueDate.toDateString() === now.toDateString()) {
-            dueDate.setDate(dueDate.getDate() + 1);
-          } else {
-            // For past dates (like "Monday" when today is Wednesday)
-            // Keep incrementing by 1 day until in the future
-            while (dueDate < now) {
-              dueDate.setDate(dueDate.getDate() + 1);
-            }
-          }
-          result.dueDate = dueDate.toISOString();
-        }
-      }
-      
-      // Set urgency to 4.5 for keywords like investor, deadline, urgent
-      if (!result.urgency && 
-          (input.toLowerCase().includes("investor") || 
-           input.toLowerCase().includes("deadline") || 
-           input.toLowerCase().includes("urgent"))) {
-        result.urgency = 4.5;
-        
-        // Remove urgency from stillNeeded if it exists
-        if (result.stillNeeded) {
-          result.stillNeeded = result.stillNeeded.filter(item => item !== "urgency");
-        }
-      }
-      
-      // Show the parsed result
-      setParsedTask(result)
-      
-      // If we have all the required fields, enable direct add
-      if (result.title && result.dueDate && result.urgency) {
-        // Wait for preview to show briefly before completing
-        setTimeout(async () => {
-          try {
-            setIsSaving(true);
-            await onAddTask(result);
-            resetForm();
-          } catch (error) {
-            console.error('Error saving task:', error);
-            setError('Failed to save task. Please try again.');
-          } finally {
-            setIsSaving(false);
-          }
-        }, 1500)
-      }
     } catch (error) {
-      console.error('Error parsing task:', error)
-      setError('Failed to parse your task. Please try again.')
+      console.error('Error generating suggestions:', error)
+      setError('Failed to generate suggestions. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -345,8 +480,10 @@ export default function TaskInput({ onAddTask }) {
             </h3>
             
             <TimeSuggestions 
-              onSelect={(date) => {
+              onSelect={async (date) => {
                 try {
+                  setIsSelectingDate(true);
+                  
                   // Check if date is in the past
                   if (isPastDate(date)) {
                     const updatedTask = {
@@ -355,6 +492,7 @@ export default function TaskInput({ onAddTask }) {
                     };
                     setPastDateTask(updatedTask);
                     setShowPastDateDialog(true);
+                    setIsSelectingDate(false);
                     return;
                   }
                   
@@ -373,68 +511,85 @@ export default function TaskInput({ onAddTask }) {
                   const naturalLanguagePrompt = `${parsedTask.title} on ${formattedDate}`;
                   
                   // Try to parse with the natural language parser to get consistent results
-                  parseTaskInput(naturalLanguagePrompt)
-                    .then(result => {
-                      // Use the original title from the parsed task, but the date from the natural language processing
-                      const updatedTask = {
-                        ...parsedTask,
-                        dueDate: result.dueDate || date, // Fallback to original date if parsing fails
-                      };
-                      
-                      // Verify the date is valid and in the future
-                      const dueDate = new Date(updatedTask.dueDate);
-                      const now = new Date();
-                      
-                      if (dueDate < now) {
-                        // Simple adjustment - if it's the same day but earlier time, set to tomorrow same time
-                        if (dueDate.toDateString() === now.toDateString()) {
+                  try {
+                    const result = await parseTaskInput(naturalLanguagePrompt);
+                    // Use the original title from the parsed task, but the date from the natural language processing
+                    const updatedTask = {
+                      ...parsedTask,
+                      dueDate: result.dueDate || date, // Fallback to original date if parsing fails
+                    };
+                    
+                    // Verify the date is valid and in the future
+                    const dueDate = new Date(updatedTask.dueDate);
+                    const now = new Date();
+                    
+                    if (dueDate < now) {
+                      // Simple adjustment - if it's the same day but earlier time, set to tomorrow same time
+                      if (dueDate.toDateString() === now.toDateString()) {
+                        dueDate.setDate(dueDate.getDate() + 1);
+                      } else {
+                        // Otherwise, increment until in the future
+                        while (dueDate < now) {
                           dueDate.setDate(dueDate.getDate() + 1);
-                        } else {
-                          // Otherwise, increment until in the future
-                          while (dueDate < now) {
-                            dueDate.setDate(dueDate.getDate() + 1);
-                          }
                         }
-                        updatedTask.dueDate = dueDate.toISOString();
                       }
-                      
-                      // If we now have all required fields, complete the task
-                      if (updatedTask.dueDate && updatedTask.urgency) {
-                        onAddTask(updatedTask);
-                        resetForm();
-                      } else {
-                        // We still need to get the urgency
-                        finalizeTask({ 
-                          dueDate: updatedTask.dueDate,
-                          urgency: updatedTask.urgency 
-                        });
-                      }
-                    })
-                    .catch(error => {
-                      console.error("Error parsing natural language date:", error);
-                      // If there's an error parsing, just use the date as is
-                      const updatedTask = {
-                        ...parsedTask,
-                        dueDate: date
-                      };
-                      
-                      if (updatedTask.dueDate && updatedTask.urgency) {
-                        onAddTask(updatedTask);
-                        resetForm();
-                      } else {
-                        finalizeTask({ 
-                          dueDate: updatedTask.dueDate,
-                          urgency: updatedTask.urgency 
-                        });
-                      }
-                    });
+                      updatedTask.dueDate = dueDate.toISOString();
+                    }
+                    
+                    // If we now have all required fields, complete the task
+                    if (updatedTask.dueDate && updatedTask.urgency) {
+                      await onAddTask(updatedTask);
+                      resetForm();
+                    } else {
+                      // We still need to get the urgency
+                      await finalizeTask({ 
+                        dueDate: updatedTask.dueDate,
+                        urgency: updatedTask.urgency 
+                      });
+                    }
+                  } catch (error) {
+                    console.error("Error parsing natural language date:", error);
+                    // If there's an error parsing, just use the date as is
+                    const updatedTask = {
+                      ...parsedTask,
+                      dueDate: date
+                    };
+                    
+                    if (updatedTask.dueDate && updatedTask.urgency) {
+                      await onAddTask(updatedTask);
+                      resetForm();
+                    } else {
+                      await finalizeTask({ 
+                        dueDate: updatedTask.dueDate,
+                        urgency: updatedTask.urgency 
+                      });
+                    }
+                  }
                 } catch (error) {
                   console.error("Error processing selected date:", error);
                   // Fallback - use date directly if there's any error
-                  finalizeTask({ dueDate: date, urgency: parsedTask.urgency });
+                  await finalizeTask({ dueDate: date, urgency: parsedTask.urgency });
+                } finally {
+                  setIsSelectingDate(false);
                 }
               }}
+              disabled={isSelectingDate}
             />
+            
+            {/* Loading animation for date selection */}
+            <AnimatePresence>
+              {isSelectingDate && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-4 flex items-center justify-center p-4 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                >
+                  <ArrowPathIcon className="w-5 h-5 text-[#f76f52] animate-spin mr-3" />
+                  <span className="text-sm text-[#202020] dark:text-[#f2f0e3]">Creating task...</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <div className="mt-5 flex justify-between gap-2">
               <motion.button
@@ -483,18 +638,42 @@ export default function TaskInput({ onAddTask }) {
             </div>
             
             <UrgencySelector
-              onChange={(urgency) => {
-                const updatedTask = {
-                  ...parsedTask,
-                  urgency
-                };
+              onChange={async (urgency) => {
+                try {
+                  setIsSelectingDate(true); // Reuse the same loading state
+                  const updatedTask = {
+                    ...parsedTask,
+                    urgency
+                  };
 
-                // Complete the task creation only when user confirms
-                onAddTask(updatedTask);
-                resetForm();
+                  // Complete the task creation only when user confirms
+                  await onAddTask(updatedTask);
+                  resetForm();
+                } catch (error) {
+                  console.error('Error saving task with urgency:', error);
+                  setError('Failed to save task. Please try again.');
+                } finally {
+                  setIsSelectingDate(false);
+                }
               }}
               initialValue={3}
+              disabled={isSelectingDate}
             />
+            
+            {/* Loading animation for urgency selection */}
+            <AnimatePresence>
+              {isSelectingDate && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-4 flex items-center justify-center p-4 bg-[#e8e6d9] dark:bg-[#2a2a2a] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                >
+                  <ArrowPathIcon className="w-5 h-5 text-[#f76f52] animate-spin mr-3" />
+                  <span className="text-sm text-[#202020] dark:text-[#f2f0e3]">Creating task...</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <div className="mt-5 flex justify-between gap-2">
               <motion.button
@@ -543,7 +722,12 @@ export default function TaskInput({ onAddTask }) {
                   onClick={parsePreview}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
-                  className="text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] p-2 sm:p-2.5 rounded-md transition-colors border border-[#d8d6cf] dark:border-[#3a3a3a] flex-shrink-0"
+                  className={`p-2 sm:p-2.5 rounded-md transition-colors border flex-shrink-0 ${
+                    showAISuggestions 
+                      ? 'text-[#f76f52] bg-[#f76f52]/10 border-[#f76f52]/30 hover:bg-[#f76f52]/20'
+                      : 'text-[#202020] dark:text-[#f2f0e3] hover:bg-[#e8e6d9] dark:hover:bg-[#2a2a2a] border-[#d8d6cf] dark:border-[#3a3a3a]'
+                  }`}
+                  title="Get AI suggestions based on your task"
                 >
                   <LightBulbIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </motion.button>
@@ -621,6 +805,121 @@ export default function TaskInput({ onAddTask }) {
                           <li>"Submit report by Friday afternoon, urgency 5"</li>
                           <li>"Gym workout every Monday at 7am"</li>
                         </ul>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* AI Suggestions */}
+                  <AnimatePresence>
+                    {showAISuggestions && aiSuggestions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        className="mb-4 p-4 bg-[#f2f0e3] dark:bg-[#2a2a2a] rounded-md text-sm text-[#202020] dark:text-[#f2f0e3] border border-[#f76f52]/30 dark:border-[#f76f52]/40"
+                      >
+                        <p className="font-medium mb-3 flex items-center">
+                          <LightBulbIcon className="w-4 h-4 mr-1.5 text-[#f76f52]" />
+                          AI Suggestions:
+                        </p>
+                        <div className="space-y-3">
+                          {aiSuggestions.map((suggestion, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="flex items-start p-3 bg-[#e8e6d9] dark:bg-[#202020] rounded-md border border-[#d8d6cf] dark:border-[#3a3a3a]"
+                            >
+                              <span className="text-lg mr-3 flex-shrink-0 mt-0.5">{suggestion.icon}</span>
+                              <div className="flex-grow">
+                                <p className="font-medium text-[#202020] dark:text-[#f2f0e3] mb-1">
+                                  {suggestion.title}
+                                </p>
+                                <p className="text-xs text-[#3a3a3a] dark:text-[#d1cfbf] leading-relaxed mb-2">
+                                  {suggestion.suggestion}
+                                </p>
+                                {suggestion.action && (
+                                  <motion.button
+                                    onClick={() => {
+                                      // Enhanced action handlers
+                                      const currentInput = input;
+                                      
+                                      switch(suggestion.action) {
+                                        case 'Add 30 min':
+                                          setInput(prev => prev + ' (30 min)');
+                                          break;
+                                        case 'Add 15 min':
+                                          setInput(prev => prev + ' (15 min)');
+                                          break;
+                                        case 'Add 60 min':
+                                          setInput(prev => prev + ' (1 hour)');
+                                          break;
+                                        case 'Add duration':
+                                          setInput(prev => prev + ' (30 min)');
+                                          break;
+                                        case 'Set urgent':
+                                          setInput(prev => prev + ' (urgent)');
+                                          break;
+                                        case 'Schedule 7 AM':
+                                          setInput(prev => prev + ' at 7am tomorrow');
+                                          break;
+                                        case 'Schedule 9 AM':
+                                          setInput(prev => prev + ' at 9am tomorrow');
+                                          break;
+                                        case 'Schedule 10 AM':
+                                          setInput(prev => prev + ' at 10am tomorrow');
+                                          break;
+                                        case 'Schedule 11 AM':
+                                          setInput(prev => prev + ' at 11am tomorrow');
+                                          break;
+                                        case 'Schedule evening':
+                                          setInput(prev => prev + ' at 6pm today');
+                                          break;
+                                        case 'Add prep time':
+                                          setInput(prev => prev + ' (include 15 min prep)');
+                                          break;
+                                        case 'Break down':
+                                          setInput(prev => prev + ' (break into steps)');
+                                          break;
+                                        case 'Set reminders':
+                                          setInput(prev => prev + ' (set multiple reminders)');
+                                          break;
+                                        case 'Quick task':
+                                          setInput(prev => prev + ' (quick 2-min task)');
+                                          break;
+                                        case 'Make routine':
+                                          setInput(prev => prev + ' (daily routine)');
+                                          break;
+                                        case 'Optimize timing':
+                                          setInput(prev => prev + ' at 10am');
+                                          break;
+                                        default:
+                                          // Generic enhancement
+                                          setInput(prev => prev + ' (optimized)');
+                                      }
+                                    }}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-3 py-1.5 bg-[#f76f52] hover:bg-[#e55e41] text-[#f2f0e3] rounded text-xs font-medium transition-colors"
+                                  >
+                                    {suggestion.action}
+                                  </motion.button>
+                                )}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                        <motion.button
+                          onClick={() => setShowAISuggestions(false)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="mt-3 text-xs text-[#f76f52] hover:text-[#e55e41] flex items-center"
+                        >
+                          <XMarkIcon className="w-3 h-3 mr-1" />
+                          Got it, thanks!
+                        </motion.button>
                       </motion.div>
                     )}
                   </AnimatePresence>
