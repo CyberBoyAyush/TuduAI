@@ -84,6 +84,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true); // Add this to differentiate initial load from operations
+  const [emailVerified, setEmailVerified] = useState(false); // Track email verification status
   const authCheckCompleted = useRef(false);
   const oauthCallbackProcessed = useRef(false);
   const lastToastTime = useRef(0);
@@ -108,6 +109,7 @@ export const AuthProvider = ({ children }) => {
         const user = await authService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
+          setEmailVerified(user.emailVerification || false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -128,19 +130,31 @@ export const AuthProvider = ({ children }) => {
       await authService.login(email, password);
       const user = await authService.getCurrentUser();
       setCurrentUser(user);
+      setEmailVerified(user.emailVerification || false);
 
       // Dismiss any existing loading toast if provided
       if (toastId) {
         toast.dismiss(toastId);
       }
 
+      // Check if email is verified
+      if (!user.emailVerification) {
+        // Don't navigate to todo, let ProtectedRoute handle the redirect
+        if (isDarkMode()) {
+          toast.error("Please verify your email address to continue.", toastStyles.darkError);
+        } else {
+          toast.error("Please verify your email address to continue.", toastStyles.error);
+        }
+        return { success: true, emailVerificationRequired: true };
+      }
+
       // Show success toast with user's name or email
-      // const userName = user.name || email.split("@")[0];
-      // if (isDarkMode()) {
-      //   toast.success(`Welcome back, ${userName}!`, toastStyles.darkSuccess);
-      // } else {
-      //   toast.success(`Welcome back, ${userName}!`, toastStyles.success);
-      // }
+      const userName = user.name || email.split("@")[0];
+      if (isDarkMode()) {
+        toast.success(`Welcome back, ${userName}!`, toastStyles.darkSuccess);
+      } else {
+        toast.success(`Welcome back, ${userName}!`, toastStyles.success);
+      }
 
       // Wait briefly to show success animation before redirecting
       navigate("/todo");
@@ -196,18 +210,40 @@ export const AuthProvider = ({ children }) => {
       await authService.register(email, password, name);
       const user = await authService.getCurrentUser();
       setCurrentUser(user);
+      setEmailVerified(user.emailVerification || false);
 
-      // Show success toast
-      if (isDarkMode()) {
-        toast.success(
-          `Welcome to TuduAI, ${name || email.split("@")[0]}!`,
-          toastStyles.darkSuccess
-        );
-      } else {
-        toast.success(
-          `Welcome to TuduAI, ${name || email.split("@")[0]}!`,
-          toastStyles.success
-        );
+      // Send verification email automatically
+      try {
+        await authService.sendEmailVerification();
+        if (isDarkMode()) {
+          toast.success(
+            `Welcome to TuduAI, ${name || email.split("@")[0]}! Please check your email to verify your account.`,
+            toastStyles.darkSuccess
+          );
+        } else {
+          toast.success(
+            `Welcome to TuduAI, ${name || email.split("@")[0]}! Please check your email to verify your account.`,
+            toastStyles.success
+          );
+        }
+      } catch (verificationError) {
+        console.error("Failed to send verification email:", verificationError);
+        if (isDarkMode()) {
+          toast.success(
+            `Welcome to TuduAI, ${name || email.split("@")[0]}!`,
+            toastStyles.darkSuccess
+          );
+        } else {
+          toast.success(
+            `Welcome to TuduAI, ${name || email.split("@")[0]}!`,
+            toastStyles.success
+          );
+        }
+      }
+
+      // Don't navigate to todo if email is not verified, let ProtectedRoute handle it
+      if (!user.emailVerification) {
+        return { success: true, emailVerificationRequired: true };
       }
 
       navigate("/todo");
@@ -320,6 +356,7 @@ export const AuthProvider = ({ children }) => {
       
       const user = await authService.handleOAuthCallback();
       setCurrentUser(user);
+      setEmailVerified(user.emailVerification || false);
 
       // Show success toast only once with a unique ID to prevent duplicates
       const userName = user.name || user.email?.split("@")[0] || "User";
@@ -382,15 +419,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Email verification methods
+  const sendEmailVerification = async () => {
+    return await authService.sendEmailVerification();
+  };
+
+  const resendEmailVerification = async () => {
+    return await authService.resendEmailVerification();
+  };
+
+  const refreshUserData = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        setEmailVerified(user.emailVerification || false);
+      }
+      return user;
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+      return null;
+    }
+  };
+
   const value = {
     currentUser,
     loading,
     initializing, // Expose this state to consumers
+    emailVerified,
     login,
     loginWithGoogle,
     handleOAuthCallback,
     register,
     logout,
+    sendEmailVerification,
+    resendEmailVerification,
+    refreshUserData,
   };
 
   return (

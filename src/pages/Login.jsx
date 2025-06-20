@@ -177,7 +177,11 @@ export default function Login() {
         // Show success animation locally
         setSuccess(true);
 
-        // Navigation happens in AuthContext.jsx
+        // If email verification is required, navigate to todo which will show verification UI
+        // Otherwise, navigation happens in AuthContext.jsx
+        if (result.emailVerificationRequired) {
+          setTimeout(() => navigate("/todo"), 800); // This will show the verification UI via ProtectedRoute
+        }
       } else {
         // Dismiss the loading toast
         toast.dismiss(toastId);

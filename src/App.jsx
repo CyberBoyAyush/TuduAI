@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
+import EmailVerification from "./pages/EmailVerification";
 import Todo from "./pages/Todo";
 import WeeklyInsights from "./pages/WeeklyInsights";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
@@ -99,6 +100,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/verify-email" element={<EmailVerification />} />
                     <Route
                       path="/todo"
                       element={

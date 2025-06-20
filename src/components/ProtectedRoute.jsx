@@ -5,9 +5,10 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion"; // Import motion for smooth loading animation
+import EmailVerificationRequired from "./EmailVerificationRequired";
 
 const ProtectedRoute = ({ children }) => {
-  const { currentUser, loading, initializing } = useAuth();
+  const { currentUser, loading, initializing, emailVerified } = useAuth();
 
   // Only show loading for authentication operations, not initial loading
   // Initial loading is handled by AuthProvider
@@ -31,6 +32,11 @@ const ProtectedRoute = ({ children }) => {
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Check if user's email is verified
+  if (currentUser && !currentUser.emailVerification) {
+    return <EmailVerificationRequired />;
   }
 
   return children;
